@@ -1,83 +1,76 @@
-//
-//  VehicleDetailView.swift
-//  VehicleManage
-//
-//  Created by Shaun Chuang on 2025/2/15.
-//
-
 import SwiftUI
 
 struct VehicleDetailView: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.presentationMode) private var presentationMode
     @Bindable var vehicle: Vehicle
+    let fuelPrices: [String: Double]
 
     @State private var isShowingAddFuel = false
-
+    @State private var isShowingDeleteAlert = false
+    
     var body: some View {
         VStack {
             Form {
                 Section(header: Text("車輛名稱")) {
                     TextField("車輛名稱", text: $vehicle.name)
+                        .textFieldStyle(RoundedBorderTextFieldStyle())
+                        .padding(.vertical, 4)
                 }
+                
                 Section(header: Text("預設油品")) {
-                    Picker(
-                        "預設油品",
-                        selection: $vehicle.defaultFuelType
-                    ) {
+                    Picker("預設油品", selection: $vehicle.defaultFuelType) {
                         ForEach(FuelType.allCases) { type in
                             Text(type.rawValue).tag(type)
                         }
                     }
+                    .pickerStyle(MenuPickerStyle())
                 }
-            }
-            .frame(height: 200)
-            HStack {
-                Text("油耗紀錄")
-                    .font(.headline)
-                Spacer()
-                Button("+新增油耗紀錄"){
-                    isShowingAddFuel = true
-                    
+                
+                Section(header: Text("車輛類型")) {
+                    Picker("車輛類型", selection: $vehicle.vehicleType) {
+                        ForEach(VehicleType.allCases) { type in
+                            Text(type.rawValue).tag(type)
+                        }
+                    }
+                    .pickerStyle(SegmentedPickerStyle())
                 }
-            }.padding(.horizontal)
-
-            List {
-                ForEach(vehicle.fuelRecords) { record in
-                    VStack(alignment: .leading) {
-                        Text("日期: \(record.date, format: .dateTime.year().month().day())")
-                        Text("里程數: \(record.mileage, specifier: "%.1f") 公里")
-                        Text("加油量: \(record.fuelAmount, specifier: "%.1f") 公升")
-                        Text("金額: $\(record.cost, specifier: "%.0f")")
-                        Text("油品: \(record.fuelType.rawValue)")
+                Section {
+                    // 查看油耗紀錄
+                    NavigationLink(destination: FuelRecordListView(vehicle: vehicle, fuelPrices: fuelPrices)) {
+                        Text("查看油耗紀錄")
+                    }
+                    // 查看油耗圖表
+                    NavigationLink(destination: FuelConsumptionChartView(vehicle: vehicle)) {
+                        Text("查看油耗圖表")
                     }
                 }
-                .onDelete(perform: deleteRecord)
+                Section {
+                    Button(action: {
+                        isShowingDeleteAlert = true
+                    }) {
+                        Text("刪除車輛")
+                    }
+                    .foregroundColor(.red)
+                }
             }
-//            .toolbar {
-//                ToolbarItem(placement: .navigationBarTrailing) {
-//                    Button(role: .destructive) {
-//                        deleteVehicle()
-//                    } label: {
-//                        Label("刪除車輛", systemImage: "trash")
-//                    }
-//                }
-//            }
+            .padding(.top)
 
+            Spacer()
+            
         }
-//        .navigationTitle(vehicle.name)
         .navigationTitle("車輛管理")
-        .sheet(isPresented: $isShowingAddFuel) {
-            AddFuelRecordView(vehicle: vehicle)
+        .alert(isPresented: $isShowingDeleteAlert) {
+            Alert(
+                title: Text("確認刪除"),
+                message: Text("您確定要刪除此車輛嗎？此操作無法撤銷。"),
+                primaryButton: .destructive(Text("刪除")) {
+                    // 在此處添加刪除車輛的邏輯
+                    modelContext.delete(vehicle)
+                    presentationMode.wrappedValue.dismiss()
+                },
+                secondaryButton: .cancel()
+            )
         }
     }
-
-    private func deleteRecord(offsets: IndexSet) {
-        withAnimation {
-            vehicle.fuelRecords.remove(atOffsets: offsets)
-        }
-    }
-    
-
-
 }
-

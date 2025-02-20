@@ -8,14 +8,29 @@
 import Foundation
 import SwiftData
 
+enum VehicleType: String, CaseIterable, Identifiable {
+    case car = "汽車"
+    case motorcycle = "機車"
+
+    var id: String {
+        self.rawValue
+    }
+}
+
+
 @Model class Vehicle {
     @Attribute(.unique)var id: UUID = UUID()
-    var name: String
+    @Attribute(.unique)var name: String
+    var vehicleTypeRawValue: String  // 儲存車輛類型的原始值 (String)
 
-    /// 用來真正儲存油品類型的原始值 (String)
+    /// 轉換 enum
+    var vehicleType: VehicleType {
+        get { VehicleType(rawValue: vehicleTypeRawValue) ?? .car }
+        set { vehicleTypeRawValue = newValue.rawValue }
+    }
+
     var defaultFuelTypeRawValue: String
 
-    /// 將前面的原始值轉回 enum
     var defaultFuelType: FuelType {
         get { FuelType(rawValue: defaultFuelTypeRawValue) ?? .gas95 }
         set { defaultFuelTypeRawValue = newValue.rawValue }
@@ -23,9 +38,9 @@ import SwiftData
 
     var fuelRecords: [FuelRecord] = []
 
-    init(name: String, defaultFuelType: FuelType) {
+    init(name: String, vehicleType: VehicleType, defaultFuelType: FuelType) {
         self.name = name
-        // 初始化時將 enum 轉成 String
+        self.vehicleTypeRawValue = vehicleType.rawValue
         self.defaultFuelTypeRawValue = defaultFuelType.rawValue
     }
 }

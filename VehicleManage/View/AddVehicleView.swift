@@ -12,6 +12,7 @@ struct AddVehicleView: View {
     @Environment(\.dismiss) private var dismiss
 
     @State private var name: String = ""
+    @State private var vehicleType: VehicleType = .car
     @State private var defaultFuelType: FuelType = .gas95
 
     var body: some View {
@@ -20,11 +21,16 @@ struct AddVehicleView: View {
                 Section(header: Text("車輛名稱")) {
                     TextField("請輸入車輛名稱", text: $name)
                 }
+                Section(header: Text("車輛類型")) {
+                    Picker("選擇車輛類型", selection: $vehicleType) {
+                        ForEach(VehicleType.allCases) { type in
+                            Text(type.rawValue).tag(type)
+                        }
+                    }
+                    .pickerStyle(SegmentedPickerStyle()) // 讓使用者更直覺選擇
+                }
                 Section(header: Text("預設油品")) {
-                    Picker(
-                        "預設油品",
-                        selection: $defaultFuelType
-                    ) {
+                    Picker("預設油品", selection: $defaultFuelType) {
                         ForEach(FuelType.allCases) { type in
                             Text(type.rawValue).tag(type)
                         }
@@ -52,9 +58,11 @@ struct AddVehicleView: View {
         withAnimation {
             let newVehicle = Vehicle(
                 name: name.isEmpty ? "新車輛" : name,
+                vehicleType: vehicleType,
                 defaultFuelType: defaultFuelType
             )
             modelContext.insert(newVehicle)
         }
     }
 }
+
