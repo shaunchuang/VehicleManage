@@ -7,7 +7,7 @@
 
 import SwiftData
 import Foundation
-
+/*
 class FuelPriceManager: ObservableObject {
     let modelContext: ModelContext
 
@@ -101,4 +101,4 @@ class FuelPriceManager: ObservableObject {
     }
 
 }
-
+*/

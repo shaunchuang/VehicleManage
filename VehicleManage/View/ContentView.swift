@@ -150,7 +150,7 @@ struct ContentView: View {
                     VehicleDetailView(vehicle: selectedVehicle, fuelPrices: fuelPrices.mapValues { Double($0) ?? 0.0 })
                 }
             }
-            .task {
+            /*.task {
                 let fuelPriceManager = FuelPriceManager(modelContext: modelContext)
                 // 先從 API 取得資料並更新 SwiftData
                 await fuelPriceManager.fetchAndUpdateFuelPrices()
@@ -158,7 +158,7 @@ struct ContentView: View {
                 fuelPriceManager.updateFuelPriceDisplay()
                 fuelPrices = fuelPriceManager.fuelPrices
                 futureFuelDifferences = fuelPriceManager.futureFuelDifferences
-            }
+            }*/
         }
     }
 
