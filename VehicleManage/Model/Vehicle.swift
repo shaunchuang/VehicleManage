@@ -19,22 +19,18 @@ enum VehicleType: String, CaseIterable, Identifiable {
 
 @Model class Vehicle {
     @Attribute(.unique) var id: UUID = UUID()
-    @Attribute(.unique) var name: String
-    var vehicleTypeRawValue: String  // 儲存車輛類型的原始值 (String)
-
-    /// 轉換 enum
+    var name: String
+    var vehicleTypeRawValue: String
     var vehicleType: VehicleType {
         get { VehicleType(rawValue: vehicleTypeRawValue) ?? .car }
         set { vehicleTypeRawValue = newValue.rawValue }
     }
-
     var defaultFuelTypeRawValue: String
-
     var defaultFuelType: FuelType {
         get { FuelType(rawValue: defaultFuelTypeRawValue) ?? .gas95 }
         set { defaultFuelTypeRawValue = newValue.rawValue }
     }
-
+    @Relationship(deleteRule: .cascade, inverse: \FuelRecord.vehicle)
     var fuelRecords: [FuelRecord] = []
 
     init(name: String, vehicleType: VehicleType, defaultFuelType: FuelType) {
@@ -42,13 +38,13 @@ enum VehicleType: String, CaseIterable, Identifiable {
         self.vehicleTypeRawValue = vehicleType.rawValue
         self.defaultFuelTypeRawValue = defaultFuelType.rawValue
     }
-    
 }
+
 extension Vehicle {
     func updateFuelRecordCalculations() {
         // 按日期排序紀錄
         let sortedRecords = fuelRecords.sorted(by: { $0.date < $1.date })
-        
+
         // 遍歷所有紀錄，計算相關欄位
         for i in 0..<sortedRecords.count {
             let current = sortedRecords[i]
@@ -57,14 +53,15 @@ extension Vehicle {
                 let next = sortedRecords[i + 1]
                 let distance = next.mileage - current.mileage
                 current.drivenDistance = distance > 0 ? distance : 0
-                
+
                 // 計算 averageFuelConsumption
                 if current.fuelAmount > 0 {
-                    current.averageFuelConsumption = current.drivenDistance / current.fuelAmount
+                    current.averageFuelConsumption =
+                        current.drivenDistance / current.fuelAmount
                 } else {
                     current.averageFuelConsumption = 0
                 }
-                
+
                 // 計算 costPerKm
                 if current.drivenDistance > 0 {
                     current.costPerKm = current.cost / current.drivenDistance

@@ -1,6 +1,8 @@
-// ContentView.swift
-// VehicleManage
-// Created by Shaun Chuang on 2025/2/15.
+//
+//  ContentView.swift
+//  VehicleManage
+//  Created by Shaun Chuang on 2025/2/15.
+//
 
 import SwiftData
 import SwiftUI
@@ -8,93 +10,102 @@ import SwiftUI
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(FetchDescriptor<Vehicle>()) private var vehicles: [Vehicle]
-    @State private var fuelPrices: [String: String] = [:] // 當前油價，key 使用 CPCFuelPriceModel 的 productName
-    @State private var futureFuelDifferences: [String: Double] = [:] // 漲跌差額，key 使用 CPCFuelPriceModel 的 productName
-
+    @State private var fuelPrices: [String: String] = [:]
+    @State private var futureFuelDifferences: [String: Double] = [:]
+    
     @State private var isShowingAddVehicle = false
     @State private var isShowingAddFuel = false
     @State private var isShowingDetail = false
     @State private var selectedVehicle: Vehicle?
-
-    // 定義產品名稱映射：從 CPCFuelPriceModel 的 productName 到 FuelType 的顯示名稱
+    
     private let fuelTypeMapping: [String: FuelType] = [
         "無鉛汽油98": .gas98,
         "無鉛汽油95": .gas95,
         "無鉛汽油92": .gas92,
         "超級/高級柴油": .diesel
     ]
-
+    
     var body: some View {
         NavigationStack {
-            ZStack {
-                VStack {
+            ScrollView {
+                VStack(spacing: 24) {
                     // 即時油價區塊
-                    VStack(alignment: .leading) {
-                        Text("即時油價")
-                            .font(.title).bold()
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(.horizontal, 16)
-
+                    VStack(alignment: .leading, spacing: 12) {
+                        HStack {
+                            Image(systemName: "fuelpump.fill")
+                                .foregroundStyle(.blue)
+                            Text("即時油價")
+                                .font(.title2.bold())
+                        }
+                        .padding(.horizontal)
+                        
                         if !fuelPrices.isEmpty {
-                            VStack(alignment: .leading, spacing: 8) {
-                                // 使用 FuelType 的顯示名稱
+                            VStack(alignment: .leading, spacing: 12) {
                                 fuelPriceRow(for: .gas98)
                                 fuelPriceRow(for: .gas95)
                                 fuelPriceRow(for: .gas92)
                                 fuelPriceRow(for: .diesel)
                             }
                             .padding()
-                            .background(Color.gray.opacity(0.1))
-                            .cornerRadius(10)
-                            .padding([.horizontal, .top])
+                            .background(.ultraThinMaterial)
+                            .cornerRadius(12)
+                            .shadow(radius: 2)
+                            .padding(.horizontal)
                         } else {
                             Text("無油價資料可顯示")
-                                .foregroundColor(.gray)
+                                .foregroundStyle(.secondary)
+                                .frame(maxWidth: .infinity)
                                 .padding()
+                                .background(Color.gray.opacity(0.1))
+                                .cornerRadius(8)
+                                .padding(.horizontal)
                         }
                     }
-                    .padding(.top, 10)
-
+                    .padding(.top)
+                    
                     // 車輛清單區塊
-                    VStack(alignment: .leading) {
+                    VStack(alignment: .leading, spacing: 12) {
                         HStack {
+                            Image(systemName: "car.fill")
+                                .foregroundStyle(.orange)
                             Text("車輛清單")
-                                .font(.title).bold()
-                                .frame(maxWidth: .infinity, alignment: .leading)
-
+                                .font(.title2.bold())
+                            Spacer()
                             Button(action: { isShowingAddVehicle = true }) {
-                                HStack {
+                                HStack(spacing: 4) {
                                     Image(systemName: "plus")
                                     Text("新增車輛")
                                 }
-                                .font(.body)
-                                .foregroundColor(.white)
-                                .padding(.vertical, 8)
-                                .padding(.horizontal, 12)
-                                .background(Color.blue)
+                                .font(.subheadline)
+                                .padding(.vertical, 6)
+                                .padding(.horizontal, 10)
+                                .background(Color.blue.gradient)
+                                .foregroundStyle(.white)
                                 .cornerRadius(8)
+                                .shadow(radius: 1)
                             }
                         }
-                        .padding(.top, 10)
-                        .padding(.horizontal, 16)
-
+                        .padding(.horizontal)
+                        
                         if vehicles.isEmpty {
-                            VStack {
-                                Spacer()
+                            VStack(spacing: 8) {
+                                Image(systemName: "car.side")
+                                    .font(.system(size: 50))
+                                    .foregroundStyle(.gray.opacity(0.5))
                                 Text("尚未新增車輛")
-                                    .foregroundColor(.gray)
-                                    .font(.title2)
-                                    .multilineTextAlignment(.center)
-                                Text("請點擊右上方按鈕新增車輛")
-                                    .foregroundColor(.gray)
-                                    .font(.body)
-                                    .multilineTextAlignment(.center)
-                                Spacer()
+                                    .font(.title3)
+                                    .foregroundStyle(.gray)
+                                Text("點擊右上角新增您的第一輛車")
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
                             }
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                            .frame(maxWidth: .infinity, maxHeight: 200)
+                            .background(.ultraThinMaterial)
+                            .cornerRadius(12)
+                            .padding(.horizontal)
                         } else {
                             ScrollView(.horizontal, showsIndicators: false) {
-                                HStack(spacing: 12) {
+                                HStack(spacing: 16) {
                                     ForEach(vehicles) { vehicle in
                                         VehicleCardView(
                                             vehicle: vehicle,
@@ -109,15 +120,15 @@ struct ContentView: View {
                                         )
                                     }
                                 }
-                                .padding()
+                                .padding(.horizontal)
                             }
-                            .frame(height: 200)
+                            .frame(height: 220)
                         }
                     }
-
-                    Spacer()
                 }
             }
+            //.navigationTitle("車輛管理")
+            .background(Color(.systemGroupedBackground))
             .sheet(isPresented: $isShowingAddVehicle) {
                 AddVehicleView()
             }
@@ -142,95 +153,82 @@ struct ContentView: View {
             }
         }
     }
-
+    
     // MARK: - Helper Methods
-
-    /// 為特定油品生成油價顯示行
+    
     private func fuelPriceRow(for fuelType: FuelType) -> some View {
         let productName = fuelTypeMapping.first(where: { $0.value == fuelType })?.key ?? ""
-        print("DEBUG: Rendering \(fuelType.rawValue), productName: \(productName), fuelPrices[\(productName)] = \(fuelPrices[productName] ?? "nil"), diff = \(futureFuelDifferences[productName] ?? 0)")
         
         if let diff = futureFuelDifferences[productName], diff != 0 {
-            return Text("\(fuelType.rawValue)(未來): \(fuelPrices[productName] ?? "") 元/公升 (\(diffText(diff: diff)))")
-                .foregroundColor(diff > 0 ? .red : .green)
-                .eraseToAnyView()
+            return HStack {
+                Text(fuelType.rawValue)
+                    .font(.subheadline)
+                    .foregroundStyle(.primary)
+                Spacer()
+                Text("\(fuelPrices[productName] ?? "") 元/公升")
+                    .font(.subheadline)
+                    .foregroundStyle(.primary)
+                Text("(\(diffText(diff: diff)))")
+                    .font(.caption)
+                    .foregroundStyle(diff > 0 ? .red : .green)
+                    .padding(.horizontal, 6)
+                    .background(diff > 0 ? Color.red.opacity(0.1) : Color.green.opacity(0.1))
+                    .cornerRadius(4)
+            }
+            .eraseToAnyView()
         } else if let price = fuelPrices[productName] {
-            return Text("\(fuelType.rawValue)：\(price) 元/公升")
-                .eraseToAnyView()
+            return HStack {
+                Text(fuelType.rawValue)
+                    .font(.subheadline)
+                Spacer()
+                Text("\(price) 元/公升")
+                    .font(.subheadline)
+            }
+            .eraseToAnyView()
         }
-        return Text("") // 若無資料則返回空文字
+        return Text("")
             .eraseToAnyView()
     }
-
-    /// 從 SwiftData 中獲取當前和未來油價，並計算漲跌差額
+    
     private func fetchFuelPricesAndDifferences() async {
         let productNames = ["無鉛汽油98", "無鉛汽油95", "無鉛汽油92", "超級/高級柴油"]
         let currentDate = Date()
         
-        print("DEBUG: 當前日期: \(currentDate)")
-
         do {
             for productName in productNames {
-                print("DEBUG: 查詢產品: \(productName)")
-                
                 let descriptor = FetchDescriptor<CPCFuelPriceModel>(
                     predicate: #Predicate { $0.productName == productName },
                     sortBy: [SortDescriptor(\.effectiveDate, order: .reverse)]
                 )
                 
                 let allPrices = try modelContext.fetch(descriptor)
-                for price in allPrices {
-                    print("DEBUG: \(productName) - Actual ProductName: \(price.productName), EffectiveDate: \(price.effectiveDate), Price: \(price.price)")
-                }
-                
-                print("DEBUG: \(productName) 總記錄數: \(allPrices.count)")
-                if allPrices.isEmpty {
-                    print("DEBUG: \(productName) 無資料")
-                    continue
-                }
-                
-                for price in allPrices {
-                    print("DEBUG: \(productName) - EffectiveDate: \(price.effectiveDate), Price: \(price.price)")
-                }
-
                 if let currentPrice = allPrices.first(where: { $0.effectiveDate <= currentDate }) {
                     fuelPrices[productName] = String(format: "%.2f", currentPrice.price)
-                    print("DEBUG: \(productName) 當前油價: \(currentPrice.price), EffectiveDate: \(currentPrice.effectiveDate)")
-                    
                     if let futurePrice = allPrices.first(where: { $0.effectiveDate > currentDate }) {
                         let difference = futurePrice.price - currentPrice.price
                         futureFuelDifferences[productName] = difference
                         fuelPrices[productName] = String(format: "%.2f", futurePrice.price)
-                        print("DEBUG: \(productName) 未來油價: \(futurePrice.price), EffectiveDate: \(futurePrice.effectiveDate), 漲跌: \(difference)")
                     } else {
                         futureFuelDifferences[productName] = 0
-                        print("DEBUG: \(productName) 無未來油價")
                     }
-                } else {
-                    print("DEBUG: \(productName) 無當前生效油價")
                 }
             }
-            
-            print("DEBUG: 最終 fuelPrices: \(fuelPrices)")
-            print("DEBUG: 最終 futureFuelDifferences: \(futureFuelDifferences)")
         } catch {
             print("獲取油價資料失敗: \(error)")
         }
     }
-
-    /// 顯示漲跌文字
+    
     private func diffText(diff: Double) -> String {
         if diff > 0 {
-            return "+\(String(format: "%.2f", diff))"
+            return "↑ \(String(format: "%.2f", diff))"
         } else if diff < 0 {
-            return String(format: "%.2f", diff)
+            return "↓ \(String(format: "%.2f", -diff))"
         } else {
-            return "0"
+            return "無變化"
         }
     }
 }
 
-// 輔助方法：將 View 轉為 AnyView
 extension View {
     func eraseToAnyView() -> AnyView {
         AnyView(self)

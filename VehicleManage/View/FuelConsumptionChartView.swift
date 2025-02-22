@@ -7,6 +7,7 @@ struct FuelConsumptionChartView: View {
     @State private var selectedTimeRange: TimeRange = .oneMonth
     @State private var customStartDate: Date = Calendar.current.date(byAdding: .month, value: -1, to: Date())!
     @State private var customEndDate: Date = Date()
+    @State private var selectedChart: ChartType = .fuelConsumption // 新增圖表選擇狀態
     
     // 時間範圍枚舉
     enum TimeRange: String, CaseIterable, Identifiable {
@@ -15,6 +16,15 @@ struct FuelConsumptionChartView: View {
         case oneYear = "一年內"
         case custom = "自定義"
         case all = "全部"
+        
+        var id: String { self.rawValue }
+    }
+    
+    // 圖表類型枚舉
+    enum ChartType: String, CaseIterable, Identifiable {
+        case fuelConsumption = "油耗趨勢"
+        case fuelCost = "加油金額"
+        case distance = "行駛距離"
         
         var id: String { self.rawValue }
     }
@@ -40,7 +50,6 @@ struct FuelConsumptionChartView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 16) {
-                
                 // 時間範圍選擇
                 Picker("選擇時間範圍", selection: $selectedTimeRange) {
                     ForEach(TimeRange.allCases) { range in
@@ -52,194 +61,36 @@ struct FuelConsumptionChartView: View {
                 
                 // 自定義時間範圍的日期選擇器
                 if selectedTimeRange == .custom {
-                    DatePicker("開始日期", selection: $customStartDate, displayedComponents: .date)
-                    DatePicker("結束日期", selection: $customEndDate, displayedComponents: .date)
+                    DatePicker("開始日期", selection: $customStartDate, in: ...Date(), displayedComponents: .date).padding(.horizontal)
+                    DatePicker("結束日期", selection: $customEndDate, in: ...Date(), displayedComponents: .date).padding(.horizontal)
                 }
                 
-                // 油耗趨勢圖表
-                VStack(alignment: .leading) {
-                    Text("油耗趨勢 (km/L)")
-                        .font(.headline)
-                        .padding(.bottom, 8)
-                    
-                    Chart {
-                        ForEach(filteredRecords) { record in
-                            LineMark(
-                                x: .value("日期", record.date),
-                                y: .value("油耗", record.averageFuelConsumption)
-                            )
-                            .foregroundStyle(Color.blue)
-                            .interpolationMethod(.catmullRom)
-                            
-                            PointMark(
-                                x: .value("日期", record.date),
-                                y: .value("油耗", record.averageFuelConsumption)
-                            )
-                            .symbolSize(50)
-                            .foregroundStyle(Color.blue)
-                            .annotation(position: .top) {
-                                Text(String(format: "%.1f", record.averageFuelConsumption))
-                                    .font(.caption)
-                                    .foregroundColor(.blue)
-                            }
-                        }
+                // 根據選擇顯示對應圖表
+                if !filteredRecords.isEmpty {
+                    switch selectedChart {
+                    case .fuelConsumption:
+                        fuelConsumptionChart
+                    case .fuelCost:
+                        fuelCostChart
+                    case .distance:
+                        distanceChart
                     }
-                    .chartXAxis {
-                        AxisMarks(values: .automatic(desiredCount: 6)) { value in
-                            AxisGridLine()
-                            AxisValueLabel {
-                                if let dateValue = value.as(Date.self) {
-                                    Text(dateValue, format: .dateTime.month(.defaultDigits).day())
-                                        .font(.caption)
-                                }
-                            }
-                        }
-                    }
-                    .chartYAxis {
-                        AxisMarks(position: .leading) { value in
-                            AxisGridLine()
-                            AxisValueLabel {
-                                if let fuelValue = value.as(Double.self) {
-                                    Text("\(fuelValue, specifier: "%.1f")")
-                                        .font(.caption)
-                                }
-                            }
-                        }
-                    }
-                    .frame(height: 250)
+                } else {
+                    Text("無資料可顯示")
+                        .foregroundStyle(.secondary)
+                        .padding()
                 }
-                .padding()
-                .background(.ultraThinMaterial)
-                .cornerRadius(12)
+                // 圖表類型選擇
+                Picker("選擇圖表", selection: $selectedChart) {
+                    ForEach(ChartType.allCases) { chart in
+                        Text(chart.rawValue).tag(chart)
+                    }
+                }
+                .pickerStyle(.segmented)
                 .padding(.horizontal)
-                
-                // 加油金額趨勢圖表
-                if !filteredRecords.isEmpty {
-                    VStack(alignment: .leading) {
-                        Text("加油金額趨勢 (NTD)")
-                            .font(.headline)
-                            .padding(.bottom, 8)
-                        
-                        Chart {
-                            ForEach(filteredRecords) { record in
-                                LineMark(
-                                    x: .value("日期", record.date),
-                                    y: .value("總花費", record.cost)
-                                )
-                                .foregroundStyle(Color.orange)
-                                .interpolationMethod(.catmullRom)
-                                
-                                PointMark(
-                                    x: .value("日期", record.date),
-                                    y: .value("總花費", record.cost)
-                                )
-                                .symbolSize(50)
-                                .foregroundStyle(Color.orange)
-                                .annotation(position: .top) {
-                                    Text(String(format: "%.0f", record.cost))
-                                        .font(.caption)
-                                        .foregroundColor(.orange)
-                                }
-                            }
-                        }
-                        .frame(height: 250)
-                        .chartXAxis {
-                            AxisMarks(values: .automatic(desiredCount: 6)) { value in
-                                AxisGridLine()
-                                AxisValueLabel {
-                                    if let dateValue = value.as(Date.self) {
-                                        Text(dateValue, format: .dateTime.month(.defaultDigits).day())
-                                            .font(.caption)
-                                    }
-                                }
-                            }
-                        }
-                        .chartYAxis {
-                            AxisMarks(position: .leading) { value in
-                                AxisGridLine()
-                                AxisValueLabel {
-                                    if let costValue = value.as(Double.self) {
-                                        Text("\(costValue, specifier: "%.0f")")
-                                            .font(.caption)
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    .padding()
-                    .background(.ultraThinMaterial)
-                    .cornerRadius(12)
-                    .padding(.horizontal)
-                }
-                
-                // 行駛距離趨勢圖表
-                if !filteredRecords.isEmpty {
-                    VStack(alignment: .leading) {
-                        Text("行駛距離趨勢 (km)")
-                            .font(.headline)
-                            .padding(.bottom, 8)
-                        
-                        Chart {
-                            ForEach(filteredRecords) { record in
-                                BarMark(
-                                    x: .value("日期", record.date),
-                                    y: .value("行駛距離", record.drivenDistance)
-                                )
-                                .foregroundStyle(Color.green)
-                                .annotation(position: .top) {
-                                    Text(String(format: "%.0f", record.drivenDistance))
-                                        .font(.caption)
-                                        .foregroundColor(.green)
-                                }
-                            }
-                        }
-                        .frame(height: 250)
-                        .chartXAxis {
-                            AxisMarks(values: .automatic(desiredCount: 6)) { value in
-                                AxisGridLine()
-                                AxisValueLabel {
-                                    if let dateValue = value.as(Date.self) {
-                                        Text(dateValue, format: .dateTime.month(.defaultDigits).day())
-                                            .font(.caption)
-                                    }
-                                }
-                            }
-                        }
-                        .chartYAxis {
-                            AxisMarks(position: .leading) { value in
-                                AxisGridLine()
-                                AxisValueLabel {
-                                    if let distanceValue = value.as(Double.self) {
-                                        Text("\(distanceValue, specifier: "%.0f")")
-                                            .font(.caption)
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    .padding()
-                    .background(.ultraThinMaterial)
-                    .cornerRadius(12)
-                    .padding(.horizontal)
-                }
                 
                 // 統計數據卡片
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("車輛名稱：\(vehicle.name)")
-                    Text("油耗紀錄筆數：\(filteredRecords.count)")
-                    Text("總花費：$\(totalCost(in: filteredRecords), specifier: "%.2f")")
-                    Text("總油量：\(totalFuelAmount(in: filteredRecords), specifier: "%.1f") L")
-                    Text("範圍內總里程變化：\(totalDistance(in: filteredRecords), specifier: "%.1f") 公里")
-                    Text("目前總里程：\(currentMileage(), specifier: "%.1f") 公里")
-                    Text("平均油耗：\(overallAverageConsumption(in: filteredRecords), specifier: "%.2f") km/L")
-                    Text("最高油耗：\(maxConsumption(in: filteredRecords), specifier: "%.2f") km/L")
-                    Text("最低油耗：\(minConsumption(in: filteredRecords), specifier: "%.2f") km/L")
-                    Text("平均每公里花費：\(averageCostPerKm(in: filteredRecords), specifier: "%.2f") 元/km")
-                }
-                .padding()
-                .background(.ultraThinMaterial)
-                .cornerRadius(12)
-                .padding(.horizontal)
+                statsCard
                 
                 Spacer()
             }
@@ -248,7 +99,213 @@ struct FuelConsumptionChartView: View {
         .navigationBarTitleDisplayMode(.inline)
     }
     
+    // MARK: - 圖表視圖
+    
+    private var fuelConsumptionChart: some View {
+        VStack(alignment: .leading) {
+            Text("油耗趨勢 (km/L)")
+                .font(.headline)
+                .padding(.bottom, 8)
+            
+            Chart {
+                ForEach(filteredRecords.filter { $0.averageFuelConsumption.isFinite }) { record in
+                    LineMark(
+                        x: .value("日期", record.date),
+                        y: .value("油耗", record.averageFuelConsumption)
+                    )
+                    .foregroundStyle(Color.blue)
+                    .interpolationMethod(.catmullRom)
+                    
+                    PointMark(
+                        x: .value("日期", record.date),
+                        y: .value("油耗", record.averageFuelConsumption)
+                    )
+                    .symbolSize(50)
+                    .foregroundStyle(Color.blue)
+                    .annotation(position: .top) {
+                        Text(String(format: "%.1f", record.averageFuelConsumption))
+                            .font(.caption)
+                            .foregroundColor(.blue)
+                    }
+                }
+            }
+            .chartXAxis {
+                AxisMarks(values: .automatic(desiredCount: 6)) { value in
+                    AxisGridLine()
+                    AxisValueLabel {
+                        if let dateValue = value.as(Date.self) {
+                            Text(dateValue, format: .dateTime.month(.defaultDigits).day())
+                                .font(.caption)
+                        }
+                    }
+                }
+            }
+            .chartYAxis {
+                AxisMarks(position: .leading) { value in
+                    AxisGridLine()
+                    AxisValueLabel {
+                        if let fuelValue = value.as(Double.self) {
+                            Text("\(fuelValue, specifier: "%.1f")")
+                                .font(.caption)
+                        }
+                    }
+                }
+            }
+            .frame(height: 250)
+        }
+        .padding()
+        .background(.ultraThinMaterial)
+        .cornerRadius(12)
+        .padding(.horizontal)
+    }
+    
+    private var fuelCostChart: some View {
+        VStack(alignment: .leading) {
+            Text("加油金額趨勢 (NTD)")
+                .font(.headline)
+                .padding(.bottom, 8)
+            
+            Chart {
+                ForEach(filteredRecords) { record in
+                    LineMark(
+                        x: .value("日期", record.date),
+                        y: .value("總花費", record.cost)
+                    )
+                    .foregroundStyle(Color.orange)
+                    .interpolationMethod(.catmullRom)
+                    
+                    PointMark(
+                        x: .value("日期", record.date),
+                        y: .value("總花費", record.cost)
+                    )
+                    .symbolSize(50)
+                    .foregroundStyle(Color.orange)
+                    .annotation(position: .top) {
+                        Text(String(format: "%.0f", record.cost))
+                            .font(.caption)
+                            .foregroundColor(.orange)
+                    }
+                }
+            }
+            .frame(height: 250)
+            .chartXAxis {
+                AxisMarks(values: .automatic(desiredCount: 6)) { value in
+                    AxisGridLine()
+                    AxisValueLabel {
+                        if let dateValue = value.as(Date.self) {
+                            Text(dateValue, format: .dateTime.month(.defaultDigits).day())
+                                .font(.caption)
+                        }
+                    }
+                }
+            }
+            .chartYAxis {
+                AxisMarks(position: .leading) { value in
+                    AxisGridLine()
+                    AxisValueLabel {
+                        if let costValue = value.as(Double.self) {
+                            Text("\(costValue, specifier: "%.0f")")
+                                .font(.caption)
+                        }
+                    }
+                }
+            }
+        }
+        .padding()
+        .background(.ultraThinMaterial)
+        .cornerRadius(12)
+        .padding(.horizontal)
+    }
+    
+    private var distanceChart: some View {
+        VStack(alignment: .leading) {
+            Text("行駛距離趨勢 (km)")
+                .font(.headline)
+                .padding(.bottom, 8)
+            
+            Chart {
+                ForEach(filteredRecords) { record in
+                    BarMark(
+                        x: .value("日期", record.date),
+                        y: .value("行駛距離", record.drivenDistance)
+                    )
+                    .foregroundStyle(Color.green)
+                    .annotation(position: .top) {
+                        Text(String(format: "%.0f", record.drivenDistance))
+                            .font(.caption)
+                            .foregroundColor(.green)
+                    }
+                }
+            }
+            .frame(height: 250)
+            .chartXAxis {
+                AxisMarks(values: .automatic(desiredCount: 6)) { value in
+                    AxisGridLine()
+                    AxisValueLabel {
+                        if let dateValue = value.as(Date.self) {
+                            Text(dateValue, format: .dateTime.month(.defaultDigits).day())
+                                .font(.caption)
+                        }
+                    }
+                }
+            }
+            .chartYAxis {
+                AxisMarks(position: .leading) { value in
+                    AxisGridLine()
+                    AxisValueLabel {
+                        if let distanceValue = value.as(Double.self) {
+                            Text("\(distanceValue, specifier: "%.0f")")
+                                .font(.caption)
+                        }
+                    }
+                }
+            }
+        }
+        .padding()
+        .background(.ultraThinMaterial)
+        .cornerRadius(12)
+        .padding(.horizontal)
+    }
+    
+    // MARK: - 統計卡片
+    
+    private var statsCard: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            HStack {
+                Image(systemName: "car.fill")
+                    .foregroundStyle(.blue)
+                Text("車輛統計 - \(vehicle.name)")
+                    .font(.headline)
+                    .foregroundStyle(.primary)
+            }
+            
+            LazyVGrid(
+                columns: [
+                    GridItem(.flexible(), alignment: .leading),
+                    GridItem(.flexible(), alignment: .leading)
+                ],
+                spacing: 12
+            ) {
+                StatItem(icon: "list.bullet", color: .purple, title: "紀錄筆數", value: "\(filteredRecords.count)")
+                StatItem(icon: "dollarsign.circle", color: .orange, title: "總花費", value: String(format: "$%.2f", totalCost(in: filteredRecords)))
+                StatItem(icon: "fuelpump.fill", color: .green, title: "總油量", value: String(format: "%.1f L", totalFuelAmount(in: filteredRecords)))
+                StatItem(icon: "road.lanes", color: .blue, title: "範圍里程", value: String(format: "%.1f km", totalDistance(in: filteredRecords)))
+                StatItem(icon: "gauge", color: .gray, title: "總里程", value: String(format: "%.1f km", currentMileage()))
+                StatItem(icon: "chart.line.uptrend.xyaxis", color: .teal, title: "平均油耗", value: String(format: "%.2f km/L", overallAverageConsumption(in: filteredRecords)))
+                StatItem(icon: "arrow.up.circle", color: .red, title: "最高油耗", value: String(format: "%.2f km/L", maxConsumption(in: filteredRecords)))
+                StatItem(icon: "arrow.down.circle", color: .indigo, title: "最低油耗", value: String(format: "%.2f km/L", minConsumption(in: filteredRecords)))
+                StatItem(icon: "creditcard", color: .pink, title: "每公里花費", value: String(format: "%.2f 元/km", averageCostPerKm(in: filteredRecords)))
+            }
+        }
+        .padding()
+        .background(.ultraThinMaterial)
+        .cornerRadius(12)
+        .shadow(radius: 4)
+        .padding(.horizontal)
+    }
+    
     // MARK: - 統計計算函式
+    
     private func totalCost(in records: [FuelRecord]) -> Double {
         records.reduce(0) { $0 + $1.cost }
     }
