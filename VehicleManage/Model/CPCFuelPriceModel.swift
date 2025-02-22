@@ -12,11 +12,10 @@ import SwiftData
     var productName: String
     var price: Double
     var effectiveDate: Date
-    
-    init(productName: String, price: Double, effectiveDate: Date) {
-            self.productName = productName
-            self.price = price
-            self.effectiveDate = effectiveDate
-        }
-}
 
+    init(productName: String, price: Double, effectiveDate: Date) {
+        self.productName = productName
+        self.price = price
+        self.effectiveDate = effectiveDate
+    }
+}

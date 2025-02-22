@@ -1,9 +1,3 @@
-//
-//  FuelConsumptionChartView.swift
-//  VehicleManage
-//
-//  Created by Shaun Chuang on 2025/2/16.
-//
 import SwiftUI
 import Charts
 
@@ -11,7 +5,10 @@ struct FuelConsumptionChartView: View {
     @Bindable var vehicle: Vehicle
     
     @State private var selectedTimeRange: TimeRange = .oneMonth
+    @State private var customStartDate: Date = Calendar.current.date(byAdding: .month, value: -1, to: Date())!
+    @State private var customEndDate: Date = Date()
     
+    // 時間範圍枚舉
     enum TimeRange: String, CaseIterable, Identifiable {
         case oneMonth = "一個月內"
         case threeMonths = "三個月內"
@@ -22,26 +19,21 @@ struct FuelConsumptionChartView: View {
         var id: String { self.rawValue }
     }
     
+    // 根據時間範圍篩選紀錄
     var filteredRecords: [FuelRecord] {
         let now = Date()
+        let sortedRecords = vehicle.fuelRecords.sorted { $0.date < $1.date }
         switch selectedTimeRange {
         case .oneMonth:
-            return vehicle.fuelRecords.filter {
-                $0.date >= Calendar.current.date(byAdding: .month, value: -1, to: now)!
-            }
+            return sortedRecords.filter { $0.date >= Calendar.current.date(byAdding: .month, value: -1, to: now)! }
         case .threeMonths:
-            return vehicle.fuelRecords.filter {
-                $0.date >= Calendar.current.date(byAdding: .month, value: -3, to: now)!
-            }
+            return sortedRecords.filter { $0.date >= Calendar.current.date(byAdding: .month, value: -3, to: now)! }
         case .oneYear:
-            return vehicle.fuelRecords.filter {
-                $0.date >= Calendar.current.date(byAdding: .year, value: -1, to: now)!
-            }
+            return sortedRecords.filter { $0.date >= Calendar.current.date(byAdding: .year, value: -1, to: now)! }
         case .custom:
-            // 可自行實作自訂時間區間的篩選邏輯
-            return vehicle.fuelRecords
+            return sortedRecords.filter { $0.date >= customStartDate && $0.date <= customEndDate }
         case .all:
-            return vehicle.fuelRecords
+            return sortedRecords
         }
     }
     
@@ -49,13 +41,7 @@ struct FuelConsumptionChartView: View {
         ScrollView {
             VStack(spacing: 16) {
                 
-                // 顯示圖表標題
-                Text("油耗趨勢與統計")
-                    .font(.title2)
-                    .bold()
-                    .padding(.top)
-                
-                // 時間範圍切換
+                // 時間範圍選擇
                 Picker("選擇時間範圍", selection: $selectedTimeRange) {
                     ForEach(TimeRange.allCases) { range in
                         Text(range.rawValue).tag(range)
@@ -64,44 +50,38 @@ struct FuelConsumptionChartView: View {
                 .pickerStyle(.segmented)
                 .padding(.horizontal)
                 
-                // 主圖表卡片
+                // 自定義時間範圍的日期選擇器
+                if selectedTimeRange == .custom {
+                    DatePicker("開始日期", selection: $customStartDate, displayedComponents: .date)
+                    DatePicker("結束日期", selection: $customEndDate, displayedComponents: .date)
+                }
+                
+                // 油耗趨勢圖表
                 VStack(alignment: .leading) {
                     Text("油耗趨勢 (km/L)")
                         .font(.headline)
                         .padding(.bottom, 8)
                     
                     Chart {
-                        ForEach(aggregatedData(), id: \.id) { dataPoint in
-                            
-                            // 以月或指定區間為單位的面積區域，增加漸層視覺
-                            AreaMark(
-                                x: .value("日期", dataPoint.date),
-                                y: .value("油耗", dataPoint.fuelConsumption)
-                            )
-                            .foregroundStyle(
-                                LinearGradient(
-                                    gradient: Gradient(colors: [Color.blue.opacity(0.4), Color.blue.opacity(0.05)]),
-                                    startPoint: .top,
-                                    endPoint: .bottom
-                                )
-                            )
-                            .interpolationMethod(.catmullRom)
-                            
-                            // 線圖
+                        ForEach(filteredRecords) { record in
                             LineMark(
-                                x: .value("日期", dataPoint.date),
-                                y: .value("油耗", dataPoint.fuelConsumption)
+                                x: .value("日期", record.date),
+                                y: .value("油耗", record.averageFuelConsumption)
                             )
                             .foregroundStyle(Color.blue)
                             .interpolationMethod(.catmullRom)
                             
-                            // 圓點標記
                             PointMark(
-                                x: .value("日期", dataPoint.date),
-                                y: .value("油耗", dataPoint.fuelConsumption)
+                                x: .value("日期", record.date),
+                                y: .value("油耗", record.averageFuelConsumption)
                             )
-                            .symbolSize(30)
+                            .symbolSize(50)
                             .foregroundStyle(Color.blue)
+                            .annotation(position: .top) {
+                                Text(String(format: "%.1f", record.averageFuelConsumption))
+                                    .font(.caption)
+                                    .foregroundColor(.blue)
+                            }
                         }
                     }
                     .chartXAxis {
@@ -129,11 +109,11 @@ struct FuelConsumptionChartView: View {
                     .frame(height: 250)
                 }
                 .padding()
-                .background(.ultraThinMaterial) // 半透明背景，可改成 Color(.systemBackground)
+                .background(.ultraThinMaterial)
                 .cornerRadius(12)
                 .padding(.horizontal)
                 
-                // 追加「金額」折線圖 (可自由增減)
+                // 加油金額趨勢圖表
                 if !filteredRecords.isEmpty {
                     VStack(alignment: .leading) {
                         Text("加油金額趨勢 (NTD)")
@@ -141,20 +121,25 @@ struct FuelConsumptionChartView: View {
                             .padding(.bottom, 8)
                         
                         Chart {
-                            ForEach(aggregatedData(), id: \.id) { dataPoint in
+                            ForEach(filteredRecords) { record in
                                 LineMark(
-                                    x: .value("日期", dataPoint.date),
-                                    y: .value("總花費", dataPoint.totalCost)
+                                    x: .value("日期", record.date),
+                                    y: .value("總花費", record.cost)
                                 )
                                 .foregroundStyle(Color.orange)
                                 .interpolationMethod(.catmullRom)
                                 
                                 PointMark(
-                                    x: .value("日期", dataPoint.date),
-                                    y: .value("總花費", dataPoint.totalCost)
+                                    x: .value("日期", record.date),
+                                    y: .value("總花費", record.cost)
                                 )
-                                .symbolSize(30)
+                                .symbolSize(50)
                                 .foregroundStyle(Color.orange)
+                                .annotation(position: .top) {
+                                    Text(String(format: "%.0f", record.cost))
+                                        .font(.caption)
+                                        .foregroundColor(.orange)
+                                }
                             }
                         }
                         .frame(height: 250)
@@ -187,16 +172,69 @@ struct FuelConsumptionChartView: View {
                     .padding(.horizontal)
                 }
                 
+                // 行駛距離趨勢圖表
+                if !filteredRecords.isEmpty {
+                    VStack(alignment: .leading) {
+                        Text("行駛距離趨勢 (km)")
+                            .font(.headline)
+                            .padding(.bottom, 8)
+                        
+                        Chart {
+                            ForEach(filteredRecords) { record in
+                                BarMark(
+                                    x: .value("日期", record.date),
+                                    y: .value("行駛距離", record.drivenDistance)
+                                )
+                                .foregroundStyle(Color.green)
+                                .annotation(position: .top) {
+                                    Text(String(format: "%.0f", record.drivenDistance))
+                                        .font(.caption)
+                                        .foregroundColor(.green)
+                                }
+                            }
+                        }
+                        .frame(height: 250)
+                        .chartXAxis {
+                            AxisMarks(values: .automatic(desiredCount: 6)) { value in
+                                AxisGridLine()
+                                AxisValueLabel {
+                                    if let dateValue = value.as(Date.self) {
+                                        Text(dateValue, format: .dateTime.month(.defaultDigits).day())
+                                            .font(.caption)
+                                    }
+                                }
+                            }
+                        }
+                        .chartYAxis {
+                            AxisMarks(position: .leading) { value in
+                                AxisGridLine()
+                                AxisValueLabel {
+                                    if let distanceValue = value.as(Double.self) {
+                                        Text("\(distanceValue, specifier: "%.0f")")
+                                            .font(.caption)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    .padding()
+                    .background(.ultraThinMaterial)
+                    .cornerRadius(12)
+                    .padding(.horizontal)
+                }
+                
                 // 統計數據卡片
                 VStack(alignment: .leading, spacing: 8) {
                     Text("車輛名稱：\(vehicle.name)")
                     Text("油耗紀錄筆數：\(filteredRecords.count)")
                     Text("總花費：$\(totalCost(in: filteredRecords), specifier: "%.2f")")
                     Text("總油量：\(totalFuelAmount(in: filteredRecords), specifier: "%.1f") L")
-                    Text("目前里程：\(currentMileage(), specifier: "%.1f") 公里")
+                    Text("範圍內總里程變化：\(totalDistance(in: filteredRecords), specifier: "%.1f") 公里")
+                    Text("目前總里程：\(currentMileage(), specifier: "%.1f") 公里")
                     Text("平均油耗：\(overallAverageConsumption(in: filteredRecords), specifier: "%.2f") km/L")
                     Text("最高油耗：\(maxConsumption(in: filteredRecords), specifier: "%.2f") km/L")
                     Text("最低油耗：\(minConsumption(in: filteredRecords), specifier: "%.2f") km/L")
+                    Text("平均每公里花費：\(averageCostPerKm(in: filteredRecords), specifier: "%.2f") 元/km")
                 }
                 .padding()
                 .background(.ultraThinMaterial)
@@ -206,40 +244,11 @@ struct FuelConsumptionChartView: View {
                 Spacer()
             }
         }
-        .navigationTitle("油耗圖表")
+        .navigationTitle("油耗趨勢與統計")
         .navigationBarTitleDisplayMode(.inline)
     }
     
-    // MARK: - 資料聚合：可自行加強時間分段的邏輯
-    private func aggregatedData() -> [AggregatedData] {
-        // 先將記錄做時間排序，再根據時間範圍篩選
-        let records = filteredRecords.sorted { $0.date < $1.date }
-        
-        // 這裡仍以「月份」作為聚合範例，如需更細或更粗的區間，可再調整
-        let grouped = Dictionary(grouping: records) { record -> Date in
-            // 將日期轉成當月第一天，作為分組 key
-            let comps = Calendar.current.dateComponents([.year, .month], from: record.date)
-            return Calendar.current.date(from: comps) ?? record.date
-        }
-        
-        // 對每個月的紀錄做統計，包含平均油耗、總花費等
-        return grouped.keys.sorted().map { monthStart in
-            let monthRecords = grouped[monthStart]!
-            let totalDistance = monthRecords.reduce(0) { $0 + $1.drivenDistance }
-            let totalFuel = monthRecords.reduce(0) { $0 + $1.fuelAmount }
-            let consumption = totalFuel > 0 ? totalDistance / totalFuel : 0
-            let totalCost = monthRecords.reduce(0) { $0 + $1.cost }
-            
-            return AggregatedData(
-                date: monthStart,
-                periodLabel: monthStart.formatted(.dateTime.year().month()),
-                fuelConsumption: consumption,
-                totalCost: totalCost
-            )
-        }
-    }
-    
-    // MARK: - 統計計算函式（針對「篩選後」的記錄）
+    // MARK: - 統計計算函式
     private func totalCost(in records: [FuelRecord]) -> Double {
         records.reduce(0) { $0 + $1.cost }
     }
@@ -248,9 +257,17 @@ struct FuelConsumptionChartView: View {
         records.reduce(0) { $0 + $1.fuelAmount }
     }
     
+    private func totalDistance(in records: [FuelRecord]) -> Double {
+        guard !records.isEmpty else { return 0 }
+        let sortedRecords = records.sorted { $0.date < $1.date }
+        let firstMileage = sortedRecords.first!.mileage
+        let lastMileage = sortedRecords.last!.mileage
+        return lastMileage - firstMileage
+    }
+    
     private func overallAverageConsumption(in records: [FuelRecord]) -> Double {
-        let totalDistance = records.reduce(0) { $0 + $1.drivenDistance }
-        let totalFuel = records.reduce(0) { $0 + $1.fuelAmount }
+        let totalDistance = totalDistance(in: records)
+        let totalFuel = totalFuelAmount(in: records)
         return totalFuel > 0 ? totalDistance / totalFuel : 0
     }
     
@@ -259,20 +276,16 @@ struct FuelConsumptionChartView: View {
     }
     
     private func minConsumption(in records: [FuelRecord]) -> Double {
-        records.map { $0.averageFuelConsumption }.min() ?? 0
+        records.filter { $0.averageFuelConsumption > 0 }.map { $0.averageFuelConsumption }.min() ?? 0
+    }
+    
+    private func averageCostPerKm(in records: [FuelRecord]) -> Double {
+        let totalCost = totalCost(in: records)
+        let totalDistance = totalDistance(in: records)
+        return totalDistance > 0 ? totalCost / totalDistance : 0
     }
     
     private func currentMileage() -> Double {
         vehicle.fuelRecords.sorted { $0.date < $1.date }.last?.mileage ?? 0
     }
 }
-
-// MARK: - 新增 AggregatedData 結構，含 totalCost
-struct AggregatedData: Identifiable {
-    let id = UUID()
-    let date: Date
-    let periodLabel: String
-    let fuelConsumption: Double
-    let totalCost: Double
-}
-

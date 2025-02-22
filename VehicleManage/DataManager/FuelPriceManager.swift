@@ -1,104 +1,83 @@
-//
-//  FuelPriceManager.swift
-//  VehicleManage
-//
-//  Created by Shaun Chuang on 2025/2/18.
-//
+// FuelPriceManager.swift
+// VehicleManage
+// Created by Shaun Chuang on 2025/2/15.
 
 import SwiftData
 import Foundation
-/*
-class FuelPriceManager: ObservableObject {
-    let modelContext: ModelContext
 
-    @Published var fuelPrices: [String: String] = [:]
-    @Published var futureFuelDifferences: [String: Double] = [:]
-
-    init(modelContext: ModelContext) {
-        self.modelContext = modelContext
+class FuelPriceManager {
+    private let context: ModelContext
+    
+    init(context: ModelContext) {
+        self.context = context
     }
-
-    /// 更新即時油價與未來油價變動
-    func fetchAndUpdateFuelPrices() async {
-        let fuelPriceService = FuelPriceService()
+    
+    /// 從 CPC API 獲取並更新油價資料
+    func fetchDataFromCPCAPI() async {
+        let prodIds = [1, 2, 3, 4] // CPC 油價的四種類型
         
-        // 針對每個油品類型進行抓取
-        for fuel in FuelType.allCases {
-            // 根據你的 API 規範，這裡需要對應每個油品的產品代碼
-            let fuelId: String
-            switch fuel {
-            case .gas92:
-                fuelId = "gas92"   // 請依實際需求調整
-            case .gas95:
-                fuelId = "gas95"
-            case .gas98:
-                fuelId = "gas98"
-            case .diesel:
-                fuelId = "diesel"
-            }
+        do {
+            // 取得 SwiftData 中最新的油價資料
+            let latestStoredPrice = try FuelPriceDataService.fetchLatestFuelPrice(context: context)
             
-            print("DEBUG: 開始抓取 \(fuel.rawValue) 的油價資料，fuelId: \(fuelId)")
-            let fetchedPrices = await fuelPriceService.fetchPrice(for: fuelId, fuelName: fuel.rawValue)
-            print("DEBUG: \(fuel.rawValue) 抓取到 \(fetchedPrices.count) 筆記錄")
-            
-            // 逐筆檢查是否已存在
-            for (productName, price, effectiveDate) in fetchedPrices {
-                let predicate = Predicate<CPCFuelPriceModel> { record in
-                    record.productName == productName && record.effectiveDate == effectiveDate
+            for prodId in prodIds {
+                guard let url = URL(
+                    string: "https://vipmbr.cpc.com.tw/cpcstn/listpricewebservice.asmx/getCPCMainProdListPrice_Historical?prodid=\(prodId)"
+                ) else {
+                    print("無效的 URL: prodid=\(prodId)")
+                    continue
                 }
-                let descriptor = FetchDescriptor<CPCFuelPriceModel>(predicate: predicate)
-                let existingRecords: [CPCFuelPriceModel] = (try? modelContext.fetch(descriptor)) ?? []
                 
-                if existingRecords.isEmpty {
-                    let newRecord = CPCFuelPriceModel(productName: productName, price: price, effectiveDate: effectiveDate)
-                    saveToDatabase(newRecord)
-                    print("DEBUG: 新增 \(productName) 的油價紀錄，生效日期：\(effectiveDate)，價格：\(price)")
+                print("DEBUG: 開始抓取 CPC 油價資料 (prodid=\(prodId))")
+                let (data, response) = try await URLSession.shared.data(from: url)
+                
+                // 檢查 HTTP 狀態碼
+                guard let httpResponse = response as? HTTPURLResponse,
+                      httpResponse.statusCode == 200 else {
+                    print("DEBUG: API 回應錯誤 (prodid=\(prodId))")
+                    continue
+                }
+                
+                print("DEBUG: 成功取得 CPC 油價資料 (prodid=\(prodId))")
+                
+                let parser = XMLParser(data: data)
+                let delegate = FuelPriceXMLParserDelegate()
+                parser.delegate = delegate
+                
+                if parser.parse() {
+                    let models = delegate.models
+                    guard !models.isEmpty else {
+                        print("DEBUG: 無資料可解析 (prodid=\(prodId))")
+                        continue
+                    }
+                    
+                    // 檢查 API 的最新油價是否需要更新
+                    if let latestAPIPrice = models.max(by: { $0.effectiveDate < $1.effectiveDate }),
+                       let latestStored = latestStoredPrice,
+                       latestAPIPrice.effectiveDate <= latestStored.effectiveDate {
+                        print("DEBUG: API 最新油價與 SwiftData 相同，無需更新 (prodid=\(prodId))")
+                        continue
+                    }
+                    
+                    // 插入新資料
+                    for model in models {
+                        context.insert(model)
+                    }
+                    
+                    try context.save()
+                    print("DEBUG: 成功儲存 \(models.count) 筆資料到 SwiftData (prodid=\(prodId))")
                 } else {
-                    print("DEBUG: \(productName) 生效日期 \(effectiveDate) 的紀錄已存在")
+                    print("DEBUG: XML 解析失敗 (prodid=\(prodId))")
                 }
             }
-
+            
+            // 顯示最新資料與總筆數
+            if let latest = try FuelPriceDataService.fetchLatestFuelPrice(context: context) {
+                print("最新油價資料: \(latest.productName), \(latest.price), \(latest.effectiveDate)")
+            }
+            print("SwiftData 內油價資料總筆數: \(try FuelPriceDataService.countAllFuelPrices(context: context))")
+        } catch {
+            print("處理 CPC 油價資料時發生錯誤: \(error)")
         }
     }
-
-    /// 更新即時油價顯示 (此方法仍用來取出 SwiftData 中的資料更新 UI)
-    func updateFuelPriceDisplay() {
-        let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = "yyyy-MM-dd"
-        let today = Date()
-        
-        let descriptor = FetchDescriptor<CPCFuelPriceModel>(
-            sortBy: [SortDescriptor(\.effectiveDate, order: .reverse)]
-        )
-        let fetchedData = (try? modelContext.fetch(descriptor)) ?? []
-        print("DEBUG: SwiftData 中總共有 \(fetchedData.count) 筆油價紀錄")
-        
-        for fuel in FuelType.allCases {
-            let recordsForFuel = fetchedData.filter { $0.productName == fuel.rawValue }
-            let latestPrice = recordsForFuel.first?.price ?? 0.0
-            print("DEBUG: 油品 \(fuel.rawValue) 找到 \(recordsForFuel.count) 筆記錄，最新價格：\(latestPrice)")
-            
-            let futurePrices = recordsForFuel.filter { record in
-                guard let date = dateFormatter.date(from: record.effectiveDate) else { return false }
-                return date > today
-            }
-            .sorted { $0.effectiveDate < $1.effectiveDate }
-            
-            if let futurePrice = futurePrices.first {
-                let difference = futurePrice.price - latestPrice
-                futureFuelDifferences[fuel.rawValue] = difference
-                fuelPrices[fuel.rawValue] = String(format: "%.2f", futurePrice.price)
-            } else {
-                fuelPrices[fuel.rawValue] = String(format: "%.2f", latestPrice)
-            }
-        }
-    }
-
-    /// 儲存油價記錄到 SwiftData
-    func saveToDatabase(_ fuelPrice: CPCFuelPriceModel) {
-        modelContext.insert(fuelPrice)
-        print("DEBUG: 儲存油價記錄：\(fuelPrice.productName) - \(fuelPrice.price) (\(fuelPrice.effectiveDate))")
-    }
-
 }
-*/
