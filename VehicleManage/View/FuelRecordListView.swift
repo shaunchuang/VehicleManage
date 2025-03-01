@@ -93,64 +93,99 @@ struct FuelRecordListView: View {
     }
 }
 
-// 新增 FuelRecordRow 來美化單筆紀錄呈現
 struct FuelRecordRow: View {
     let record: FuelRecord
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            // 日期與油品
+        VStack(alignment: .leading, spacing: 12) {
+            // 日期與油品標籤
             HStack {
-                Text(record.date, format: .dateTime.year().month().day())
+                Text(record.date, format: Date.FormatStyle()
+                    .locale(Locale(identifier: "zh-Hant-TW"))
+                    .year().month().day().weekday(.wide))
                     .font(.subheadline)
                     .foregroundStyle(.primary)
+                
                 Spacer()
+                
                 Text(record.fuelType.rawValue)
-                    .font(.caption)
-                    .padding(4)
-                    .background(Color.blue.opacity(0.1))
-                    .cornerRadius(4)
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(.blue)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(Color.blue.opacity(0.15))
+                    .clipShape(Capsule())
             }
             
-            // 主要數據
-            HStack(spacing: 16) {
-                // 里程與油耗
-                VStack(alignment: .leading, spacing: 4) {
-                    RecordItem(label: "里程", value: String(format: "%.1f km", record.mileage))
-                    RecordItem(label: "油耗", value: String(format: "%.2f km/L", record.averageFuelConsumption))
+            // 主要數據區塊
+            HStack(spacing: 20) {
+                // 左側：里程與加油量
+                VStack(alignment: .leading, spacing: 8) {
+                    RecordItem(label: "加油量", value: String(format: "%.1f L", record.fuelAmount), icon: "fuelpump.fill", color: .blue)
+                    RecordItem(label: "里程", value: String(format: "%.1f km", record.mileage), icon: "speedometer", color: .green)
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
                 
-                // 加油量與金額
-                VStack(alignment: .leading, spacing: 4) {
-                    RecordItem(label: "加油量", value: String(format: "%.1f L", record.fuelAmount))
-                    RecordItem(label: "金額", value: String(format: "$%.0f", record.cost))
+                // 右側：金額與油耗
+                VStack(alignment: .leading, spacing: 8) {
+                    RecordItem(label: "金額", value: String(format: "$%.0f", record.cost), icon: "dollarsign.circle", color: .orange)
+                    RecordItem(label: "油耗", value: String(format: "%.2f km/L", record.averageFuelConsumption), icon: "gauge", color: .purple)
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
+            
+            // 分隔線
+            Divider()
+                .background(Color.gray.opacity(0.2))
             
             // 行駛距離與每公里花費
             HStack {
-                RecordItem(label: "行駛", value: String(format: "%.1f km", record.drivenDistance))
+                RecordItem(label: "行駛", value: String(format: "%.1f km", record.drivenDistance), icon: "road.lanes", color: .gray)
                 Spacer()
-                RecordItem(label: "每公里", value: String(format: "$%.2f", record.costPerKm))
+                RecordItem(label: "每公里", value: String(format: "$%.2f", record.costPerKm), icon: "centsign.circle", color: .gray)
             }
-            .font(.caption)
+            .font(.system(size: 12))
             .foregroundStyle(.secondary)
         }
-        .padding(.vertical, 8)
+        .padding(12)
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(Color(.systemBackground))
+                .shadow(color: Color.black.opacity(0.05), radius: 4, x: 0, y: 2)
+        )
+        .padding(.vertical, 4)
+        .padding(.horizontal, 8)
     }
 }
 
-// 輔助視圖：單一數據項目
+// 輔助視圖：單個數據項
 struct RecordItem: View {
     let label: String
     let value: String
+    let icon: String
+    let color: Color
+    
+    init(label: String, value: String, icon: String = "", color: Color = .primary) {
+        self.label = label
+        self.value = value
+        self.icon = icon
+        self.color = color
+    }
     
     var body: some View {
-        HStack(spacing: 4) {
+        HStack(spacing: 8) {
+            if !icon.isEmpty {
+                Image(systemName: icon)
+                    .font(.system(size: 14))
+                    .foregroundStyle(color)
+            }
             Text(label)
+                .font(.system(size: 14, weight: .regular))
                 .foregroundStyle(.secondary)
+            Spacer()
             Text(value)
-                .fontWeight(.medium)
+                .font(.system(size: 14, weight: .medium))
+                .foregroundStyle(.primary)
         }
     }
 }

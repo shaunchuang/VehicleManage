@@ -32,11 +32,13 @@ enum VehicleType: String, CaseIterable, Identifiable {
     }
     @Relationship(deleteRule: .cascade, inverse: \FuelRecord.vehicle)
     var fuelRecords: [FuelRecord] = []
+    @Attribute(.unique) var isDefault: Bool
 
-    init(name: String, vehicleType: VehicleType, defaultFuelType: FuelType) {
+    init(name: String, vehicleType: VehicleType, defaultFuelType: FuelType, isDefault: Bool = false) {
         self.name = name
         self.vehicleTypeRawValue = vehicleType.rawValue
         self.defaultFuelTypeRawValue = defaultFuelType.rawValue
+        self.isDefault = isDefault
     }
 }
 

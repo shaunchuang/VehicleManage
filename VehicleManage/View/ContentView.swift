@@ -1,15 +1,21 @@
-//
-//  ContentView.swift
-//  VehicleManage
-//  Created by Shaun Chuang on 2025/2/15.
-//
-
 import SwiftData
 import SwiftUI
 
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
-    @Query(FetchDescriptor<Vehicle>()) private var vehicles: [Vehicle]
+    // 移除排序描述符，使用基本查詢
+    @Query private var vehicles: [Vehicle]
+
+    // 添加計算屬性，按需要的順序排序
+    private var sortedVehicles: [Vehicle] {
+        vehicles.sorted { v1, v2 in
+            if v1.isDefault && !v2.isDefault { return true }
+            if !v1.isDefault && v2.isDefault { return false }
+            return v1.name < v2.name
+        }
+    }
+
+
     @State private var fuelPrices: [String: String] = [:]
     @State private var futureFuelDifferences: [String: Double] = [:]
     
@@ -105,8 +111,8 @@ struct ContentView: View {
                             .padding(.horizontal)
                         } else {
                             ScrollView(.horizontal, showsIndicators: false) {
-                                HStack(spacing: 16) {
-                                    ForEach(vehicles) { vehicle in
+                                LazyHStack(spacing: 16) {
+                                    ForEach(sortedVehicles) { vehicle in
                                         VehicleCardView(
                                             vehicle: vehicle,
                                             onAddFuel: {
@@ -119,6 +125,7 @@ struct ContentView: View {
                                             }
                                         )
                                     }
+                                    .onMove(perform: moveVehicle)
                                 }
                                 .padding(.horizontal)
                             }
@@ -127,10 +134,11 @@ struct ContentView: View {
                     }
                 }
             }
-            //.navigationTitle("車輛管理")
             .background(Color(.systemGroupedBackground))
             .sheet(isPresented: $isShowingAddVehicle) {
-                AddVehicleView()
+                AddVehicleView(onVehicleAdded: { _ in
+                    ensureDefaultVehicle()
+                })
             }
             .sheet(isPresented: $isShowingAddFuel) {
                 if let selectedVehicle = selectedVehicle {
@@ -150,6 +158,9 @@ struct ContentView: View {
             }
             .task {
                 await fetchFuelPricesAndDifferences()
+            }
+            .onAppear {
+                ensureDefaultVehicle()
             }
         }
     }
@@ -198,7 +209,7 @@ struct ContentView: View {
             for productName in productNames {
                 let descriptor = FetchDescriptor<CPCFuelPriceModel>(
                     predicate: #Predicate { $0.productName == productName },
-                    sortBy: [SortDescriptor(\.effectiveDate, order: .reverse)]
+                    sortBy: [SortDescriptor(\CPCFuelPriceModel.effectiveDate, order: .reverse)]
                 )
                 
                 let allPrices = try modelContext.fetch(descriptor)
@@ -227,14 +238,55 @@ struct ContentView: View {
             return "無變化"
         }
     }
+    
+    // MARK: - Drag and Drop Logic
+    
+    private func moveVehicle(from source: IndexSet, to destination: Int) {
+        var updatedVehicles = vehicles
+        updatedVehicles.move(fromOffsets: source, toOffset: destination)
+
+        for (index, vehicle) in updatedVehicles.enumerated() {
+            vehicle.isDefault = (index == 0)
+        }
+
+        do {
+            try modelContext.save()
+        } catch {
+            print("Failed to save after moving vehicles: \(error)")
+        }
+    }
+    
+    private func ensureDefaultVehicle() {
+        guard !vehicles.isEmpty else { return }
+
+        let hasDefault = vehicles.contains { $0.isDefault }
+        if !hasDefault {
+            vehicles[0].isDefault = true
+            do {
+                try modelContext.save()
+            } catch {
+                print("Failed to set default vehicle: \(error)")
+            }
+        } else {
+            var defaultSet = false
+            for vehicle in vehicles {
+                if !defaultSet && vehicle.isDefault {
+                    defaultSet = true
+                } else if vehicle.isDefault {
+                    vehicle.isDefault = false
+                }
+            }
+            do {
+                try modelContext.save()
+            } catch {
+                print("Failed to ensure single default vehicle: \(error)")
+            }
+        }
+    }
 }
 
 extension View {
     func eraseToAnyView() -> AnyView {
         AnyView(self)
     }
-}
-
-#Preview {
-    ContentView()
 }

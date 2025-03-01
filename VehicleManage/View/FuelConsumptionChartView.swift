@@ -61,8 +61,8 @@ struct FuelConsumptionChartView: View {
                 
                 // 自定義時間範圍的日期選擇器
                 if selectedTimeRange == .custom {
-                    DatePicker("開始日期", selection: $customStartDate, in: ...Date(), displayedComponents: .date).padding(.horizontal)
-                    DatePicker("結束日期", selection: $customEndDate, in: ...Date(), displayedComponents: .date).padding(.horizontal)
+                    DatePicker("開始日期", selection: $customStartDate, in: ...Date(), displayedComponents: .date).environment(\.locale, Locale(identifier: "zh-Hant-TW")) .padding(.horizontal)
+                    DatePicker("結束日期", selection: $customEndDate, in: ...Date(), displayedComponents: .date).environment(\.locale, Locale(identifier: "zh-Hant-TW")) .padding(.horizontal)
                 }
                 
                 // 根據選擇顯示對應圖表
@@ -108,7 +108,7 @@ struct FuelConsumptionChartView: View {
                 .padding(.bottom, 8)
             
             Chart {
-                ForEach(filteredRecords.filter { $0.averageFuelConsumption.isFinite }) { record in
+                ForEach(filteredRecords.filter { $0.averageFuelConsumption.isFinite && $0.averageFuelConsumption > 0 }) { record in
                     LineMark(
                         x: .value("日期", record.date),
                         y: .value("油耗", record.averageFuelConsumption)
@@ -224,7 +224,7 @@ struct FuelConsumptionChartView: View {
                 .padding(.bottom, 8)
             
             Chart {
-                ForEach(filteredRecords) { record in
+                ForEach(filteredRecords.filter { $0.drivenDistance > 0 }) { record in
                     BarMark(
                         x: .value("日期", record.date),
                         y: .value("行駛距離", record.drivenDistance)

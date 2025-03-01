@@ -1,16 +1,9 @@
-//
-//  AddFuelRecordView.swift
-//  VehicleManage
-//
-//  Created by Shaun Chuang on 2025/2/15.
-//
-
 import SwiftData
 import SwiftUI
 
 struct AddFuelRecordView: View {
     @Environment(\.dismiss) private var dismiss
-    @Environment(\.modelContext) private var modelContext  // 注入 ModelContext 以查詢 SwiftData
+    @Environment(\.modelContext) private var modelContext
     @Bindable var vehicle: Vehicle
 
     @State private var date = Date()
@@ -18,11 +11,9 @@ struct AddFuelRecordView: View {
     @State private var fuelAmount: String = ""
     @State private var cost: String = ""
     @State private var fuelType: FuelType
-
-    // 新增錯誤提示狀態變數
+    @State private var unitPrice: Double? = nil
     @State private var showMileageError: Bool = false
 
-    // 儲存從 SwiftData 查詢到的油價
     private let fuelTypeMapping: [FuelType: String] = [
         .gas98: "無鉛汽油98",
         .gas95: "無鉛汽油95",
@@ -45,7 +36,8 @@ struct AddFuelRecordView: View {
                         in: ...Date(),
                         displayedComponents: .date
                     )
-                    .onChange(of: date) { calculateFuelCost() }  // 日期改變時重新計算
+                    .environment(\.locale, Locale(identifier: "zh-Hant-TW"))
+                    .onChange(of: date) { calculateFuelCost() }
                     HStack {
                         TextField("總里程數（公里）", text: $mileage)
                             .keyboardType(.decimalPad)
@@ -54,26 +46,29 @@ struct AddFuelRecordView: View {
                     }
                 }
                 Section(header: Text("加油資訊")) {
-                    Picker(
-                        "油品種類",
-                        selection: $fuelType
-                    ) {
+                    Picker("油品種類", selection: $fuelType) {
                         ForEach(FuelType.allCases) { type in
                             Text(type.rawValue).tag(type)
                         }
                     }
-                        .onChange(of: fuelType) { calculateFuelCost() }  // 油品改變時重新計算
-                        
-                        HStack {
-                            TextField("加油量", text: $fuelAmount)
-                                .keyboardType(.decimalPad)
-                                .onChange(of: fuelAmount) {
-                                    calculateFuelCost()
-                                }  // 加油量改變時重新計算
-                            Text("公升")
-                                .foregroundColor(.secondary)
-                        }
+                    .onChange(of: fuelType) { calculateFuelCost() }
+                    
+                    HStack {
+                        TextField("加油量", text: $fuelAmount)
+                            .keyboardType(.decimalPad)
+                            .onChange(of: fuelAmount) { calculateFuelCost() }
+                        Text("公升")
+                            .foregroundColor(.secondary)
                     }
+                    
+                    if let price = unitPrice {
+                        Text("單價：\(String(format: "%.2f", price)) 元/公升")
+                            .foregroundColor(.secondary)
+                    } else {
+                        Text("單價：無可用油價")
+                            .foregroundColor(.red)
+                    }
+                }
                 Section {
                     HStack {
                         TextField("加油金額", text: $cost)
@@ -82,23 +77,17 @@ struct AddFuelRecordView: View {
                             .foregroundColor(.secondary)
                     }
                 }
-                
             }
             .navigationTitle("新增油耗紀錄")
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("取消") {
-                        dismiss()
-                    }
+                    Button("取消") { dismiss() }
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("儲存") {
-                        if let lastRecord = vehicle.fuelRecords.sorted(by: {
-                            $0.date < $1.date
-                        }).last,
-                            let newMileage = Double(mileage),
-                            newMileage <= lastRecord.mileage
-                        {
+                        if let lastRecord = vehicle.fuelRecords.sorted(by: { $0.date < $1.date }).last,
+                           let newMileage = Double(mileage),
+                           newMileage <= lastRecord.mileage {
                             showMileageError = true
                             return
                         }
@@ -109,12 +98,12 @@ struct AddFuelRecordView: View {
             }
             .alert(
                 "里程數錯誤", isPresented: $showMileageError,
-                actions: {
-                    Button("確定", role: .cancel) {}
-                },
-                message: {
-                    Text("總里程數必須大於上一筆紀錄的總里程數")
-                })
+                actions: { Button("確定", role: .cancel) {} },
+                message: { Text("總里程數必須大於上一筆紀錄的總里程數") }
+            )
+            .onAppear {
+                calculateFuelCost() // 初始化單價
+            }
         }
     }
 
@@ -123,8 +112,7 @@ struct AddFuelRecordView: View {
         let f = Double(fuelAmount) ?? 0
         let c = Double(cost) ?? 0
 
-        let sortedRecords = vehicle.fuelRecords.sorted(by: { $0.date < $1.date }
-        )
+        let sortedRecords = vehicle.fuelRecords.sorted(by: { $0.date < $1.date })
         let lastRecord = sortedRecords.last
 
         let newRecord = FuelRecord(
@@ -136,7 +124,7 @@ struct AddFuelRecordView: View {
             drivenDistance: 0,
             averageFuelConsumption: 0,
             costPerKm: 0,
-            vehicle: vehicle  // 顯式設置，與方案 1 一致
+            vehicle: vehicle
         )
 
         vehicle.fuelRecords.append(newRecord)
@@ -145,54 +133,53 @@ struct AddFuelRecordView: View {
             let distance = m - lastRecord.mileage
             lastRecord.drivenDistance = distance > 0 ? distance : 0
             if lastRecord.fuelAmount > 0 {
-                lastRecord.averageFuelConsumption =
-                    lastRecord.drivenDistance / lastRecord.fuelAmount
+                lastRecord.averageFuelConsumption = lastRecord.drivenDistance / lastRecord.fuelAmount
             } else {
                 lastRecord.averageFuelConsumption = 0
             }
             if lastRecord.drivenDistance > 0 {
-                lastRecord.costPerKm =
-                    lastRecord.cost / lastRecord.drivenDistance
+                lastRecord.costPerKm = lastRecord.cost / lastRecord.drivenDistance
             } else {
                 lastRecord.costPerKm = 0
             }
         }
+        
+        do {
+            try modelContext.save()
+        } catch {
+            print("Failed to save fuel record: \(error)")
+        }
     }
 
     private func calculateFuelCost() {
-        guard let amount = Double(fuelAmount), amount > 0 else {
-            cost = ""
-            return
-        }
-
-        // 根據 date 和 fuelType 從 SwiftData 查詢當天生效的油價
+        // 即使 fuelAmount 為空，也查詢並顯示單價
         if let price = fetchFuelPrice(for: fuelType, on: date) {
-            let totalCost = amount * price
-            cost = String(format: "%.0f", totalCost)  // 四捨五入到整數
+            unitPrice = price
+            if let amount = Double(fuelAmount), amount > 0 {
+                let totalCost = amount * price
+                cost = String(format: "%.0f", totalCost)
+            } else {
+                cost = ""
+            }
         } else {
-            cost = ""  // 若無油價資料，清空 cost
+            unitPrice = nil
+            cost = ""
         }
     }
 
-    private func fetchFuelPrice(for fuelType: FuelType, on date: Date)
-        -> Double?
-    {
+    private func fetchFuelPrice(for fuelType: FuelType, on date: Date) -> Double? {
         guard let productName = fuelTypeMapping[fuelType] else { return nil }
 
         do {
             var descriptor = FetchDescriptor<CPCFuelPriceModel>(
-                predicate: #Predicate {
-                    $0.productName == productName && $0.effectiveDate <= date
-                },
+                predicate: #Predicate { $0.productName == productName && $0.effectiveDate <= date },
                 sortBy: [SortDescriptor(\.effectiveDate, order: .reverse)]
             )
-            descriptor.fetchLimit = 1  // 只取最新的一筆生效油價
+            descriptor.fetchLimit = 1
 
             let prices = try modelContext.fetch(descriptor)
             if let price = prices.first {
-                print(
-                    "DEBUG: Found price for \(productName) on \(date): \(price.price), EffectiveDate: \(price.effectiveDate)"
-                )
+                print("DEBUG: Found price for \(productName) on \(date): \(price.price), EffectiveDate: \(price.effectiveDate)")
                 return price.price
             } else {
                 print("DEBUG: No price found for \(productName) on \(date)")
@@ -206,10 +193,8 @@ struct AddFuelRecordView: View {
 }
 
 #Preview {
-    let container = try! ModelContainer(
-        for: Vehicle.self, FuelRecord.self, CPCFuelPriceModel.self)
-    let vehicle = Vehicle(
-        name: "Test Car", vehicleType: .car, defaultFuelType: .gas95)
+    let container = try! ModelContainer(for: Vehicle.self, FuelRecord.self, CPCFuelPriceModel.self)
+    let vehicle = Vehicle(name: "Test Car", vehicleType: .car, defaultFuelType: .gas95)
     return AddFuelRecordView(vehicle: vehicle, fuelPrices: [:])
         .modelContainer(container)
 }

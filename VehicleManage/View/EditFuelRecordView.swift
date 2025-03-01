@@ -12,6 +12,7 @@ struct EditFuelRecordView: View {
     @State private var fuelAmount: String
     @State private var cost: String
     @State private var fuelType: FuelType
+    @State private var unitPrice: Double? = nil // 新增單價狀態
 
     private let fuelTypeMapping: [FuelType: String] = [
         .gas98: "無鉛汽油98",
@@ -20,17 +21,15 @@ struct EditFuelRecordView: View {
         .diesel: "超級/高級柴油",
     ]
 
-    // 計算日期範圍限制
     private var dateRange: ClosedRange<Date> {
         let sortedRecords = vehicle.fuelRecords.sorted { $0.date < $1.date }
         guard let currentIndex = sortedRecords.firstIndex(where: { $0.id == record.id }) else {
-            return Date.distantPast...Date.distantFuture // 如果找不到，無限制
+            return Date.distantPast...Date.distantFuture
         }
 
         let minDate = currentIndex > 0 ? sortedRecords[currentIndex - 1].date : Date.distantPast
         let maxDate = currentIndex < sortedRecords.count - 1 ? sortedRecords[currentIndex + 1].date : Date.distantFuture
         
-        // 設置當天的開始和結束時間範圍
         let calendar = Calendar.current
         let startOfMinDate = calendar.startOfDay(for: minDate)
         let endOfMaxDate = calendar.date(bySettingHour: 23, minute: 59, second: 59, of: maxDate) ?? maxDate
@@ -55,9 +54,10 @@ struct EditFuelRecordView: View {
                     DatePicker(
                         "日期",
                         selection: $date,
-                        in: dateRange, // 應用日期範圍限制
+                        in: dateRange,
                         displayedComponents: .date
                     )
+                    .environment(\.locale, Locale(identifier: "zh-Hant-TW"))
                     .onChange(of: date) { calculateFuelCost() }
                     HStack {
                         TextField("總里程數（公里）", text: $mileage)
@@ -77,14 +77,24 @@ struct EditFuelRecordView: View {
                         TextField("加油量（公升）", text: $fuelAmount)
                             .keyboardType(.decimalPad)
                             .onChange(of: fuelAmount) { calculateFuelCost() }
-                        Text("公升").foregroundColor(.secondary)
+                        Text("公升")
+                            .foregroundColor(.secondary)
+                    }
+                    // 顯示當前油價
+                    if let price = unitPrice {
+                        Text("單價：\(String(format: "%.2f", price)) 元/公升")
+                            .foregroundColor(.secondary)
+                    } else {
+                        Text("單價：無可用油價")
+                            .foregroundColor(.red)
                     }
                 }
                 Section {
                     HStack {
                         TextField("加油金額", text: $cost)
                             .keyboardType(.decimalPad)
-                        Text("元").foregroundColor(.secondary)
+                        Text("元")
+                            .foregroundColor(.secondary)
                     }
                 }
             }
@@ -95,13 +105,14 @@ struct EditFuelRecordView: View {
                         saveChanges()
                         dismiss()
                     }
-                    .disabled(!isValidInput()) // 禁用按鈕如果輸入無效
+                    .disabled(!isValidInput())
                 }
+            }
+            .onAppear {
+                calculateFuelCost() // 初始化單價
             }
         }
     }
-
-    // MARK: - Helper Methods
 
     private func saveChanges() {
         let m = Double(mileage) ?? record.mileage
@@ -115,18 +126,27 @@ struct EditFuelRecordView: View {
         record.fuelType = fuelType
 
         vehicle.updateFuelRecordCalculations()
+        
+        do {
+            try modelContext.save()
+        } catch {
+            print("Failed to save edited fuel record: \(error)")
+        }
     }
 
     private func calculateFuelCost() {
         guard let amount = Double(fuelAmount), amount > 0 else {
             cost = ""
+            unitPrice = nil
             return
         }
 
         if let price = fetchFuelPrice(for: fuelType, on: date) {
+            unitPrice = price // 更新單價
             let totalCost = amount * price
             cost = String(format: "%.0f", totalCost)
         } else {
+            unitPrice = nil
             cost = ""
         }
     }
@@ -136,9 +156,7 @@ struct EditFuelRecordView: View {
 
         do {
             var descriptor = FetchDescriptor<CPCFuelPriceModel>(
-                predicate: #Predicate {
-                    $0.productName == productName && $0.effectiveDate <= date
-                },
+                predicate: #Predicate { $0.productName == productName && $0.effectiveDate <= date },
                 sortBy: [SortDescriptor(\.effectiveDate, order: .reverse)]
             )
             descriptor.fetchLimit = 1

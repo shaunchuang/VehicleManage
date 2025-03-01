@@ -6,7 +6,20 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		F473DF242D70CFF7007F0716 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F48605D22D6E20EA000CA60F /* WidgetKit.framework */; };
+		F473DF252D70CFF7007F0716 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F48605D42D6E20EA000CA60F /* SwiftUI.framework */; };
+		F473DF362D70CFF9007F0716 /* VehicleManageWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = F473DF232D70CFF7007F0716 /* VehicleManageWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
+		F473DF342D70CFF9007F0716 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = F4F76ED12D60E459002B7314 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = F473DF222D70CFF7007F0716;
+			remoteInfo = VehicleManageWidgetExtension;
+		};
 		F4F76EEC2D60E45C002B7314 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = F4F76ED12D60E459002B7314 /* Project object */;
@@ -23,15 +36,63 @@
 		};
 /* End PBXContainerItemProxy section */
 
+/* Begin PBXCopyFilesBuildPhase section */
+		F48605EB2D6E20EE000CA60F /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				F473DF362D70CFF9007F0716 /* VehicleManageWidgetExtension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
+		F473DF232D70CFF7007F0716 /* VehicleManageWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = VehicleManageWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		F48605D22D6E20EA000CA60F /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
+		F48605D42D6E20EA000CA60F /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
 		F4F76ED92D60E45A002B7314 /* VehicleManage.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = VehicleManage.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		F4F76EEB2D60E45C002B7314 /* VehicleManageTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = VehicleManageTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		F4F76EF52D60E45C002B7314 /* VehicleManageUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = VehicleManageUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		F473DF372D70CFF9007F0716 /* Exceptions for "VehicleManageWidget" folder in "VehicleManageWidgetExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = F473DF222D70CFF7007F0716 /* VehicleManageWidgetExtension */;
+		};
+		F473DF3C2D70D034007F0716 /* Exceptions for "VehicleManage" folder in "VehicleManageWidgetExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Model/CPCFuelPriceModel.swift,
+				Model/FuelRecord.swift,
+				Model/FuelType.swift,
+				Model/Vehicle.swift,
+			);
+			target = F473DF222D70CFF7007F0716 /* VehicleManageWidgetExtension */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
+		F473DF262D70CFF7007F0716 /* VehicleManageWidget */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				F473DF372D70CFF9007F0716 /* Exceptions for "VehicleManageWidget" folder in "VehicleManageWidgetExtension" target */,
+			);
+			path = VehicleManageWidget;
+			sourceTree = "<group>";
+		};
 		F4F76EDB2D60E45A002B7314 /* VehicleManage */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				F473DF3C2D70D034007F0716 /* Exceptions for "VehicleManage" folder in "VehicleManageWidgetExtension" target */,
+			);
 			path = VehicleManage;
 			sourceTree = "<group>";
 		};
@@ -48,6 +109,15 @@
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		F473DF202D70CFF7007F0716 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				F473DF252D70CFF7007F0716 /* SwiftUI.framework in Frameworks */,
+				F473DF242D70CFF7007F0716 /* WidgetKit.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		F4F76ED62D60E45A002B7314 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -72,12 +142,23 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		F48605D12D6E20EA000CA60F /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				F48605D22D6E20EA000CA60F /* WidgetKit.framework */,
+				F48605D42D6E20EA000CA60F /* SwiftUI.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		F4F76ED02D60E459002B7314 = {
 			isa = PBXGroup;
 			children = (
 				F4F76EDB2D60E45A002B7314 /* VehicleManage */,
 				F4F76EEE2D60E45C002B7314 /* VehicleManageTests */,
 				F4F76EF82D60E45C002B7314 /* VehicleManageUITests */,
+				F473DF262D70CFF7007F0716 /* VehicleManageWidget */,
+				F48605D12D6E20EA000CA60F /* Frameworks */,
 				F4F76EDA2D60E45A002B7314 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -88,6 +169,7 @@
 				F4F76ED92D60E45A002B7314 /* VehicleManage.app */,
 				F4F76EEB2D60E45C002B7314 /* VehicleManageTests.xctest */,
 				F4F76EF52D60E45C002B7314 /* VehicleManageUITests.xctest */,
+				F473DF232D70CFF7007F0716 /* VehicleManageWidgetExtension.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -95,6 +177,28 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		F473DF222D70CFF7007F0716 /* VehicleManageWidgetExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = F473DF382D70CFF9007F0716 /* Build configuration list for PBXNativeTarget "VehicleManageWidgetExtension" */;
+			buildPhases = (
+				F473DF1F2D70CFF7007F0716 /* Sources */,
+				F473DF202D70CFF7007F0716 /* Frameworks */,
+				F473DF212D70CFF7007F0716 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				F473DF262D70CFF7007F0716 /* VehicleManageWidget */,
+			);
+			name = VehicleManageWidgetExtension;
+			packageProductDependencies = (
+			);
+			productName = VehicleManageWidgetExtension;
+			productReference = F473DF232D70CFF7007F0716 /* VehicleManageWidgetExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 		F4F76ED82D60E45A002B7314 /* VehicleManage */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = F4F76EFF2D60E45C002B7314 /* Build configuration list for PBXNativeTarget "VehicleManage" */;
@@ -102,10 +206,12 @@
 				F4F76ED52D60E45A002B7314 /* Sources */,
 				F4F76ED62D60E45A002B7314 /* Frameworks */,
 				F4F76ED72D60E45A002B7314 /* Resources */,
+				F48605EB2D6E20EE000CA60F /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				F473DF352D70CFF9007F0716 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				F4F76EDB2D60E45A002B7314 /* VehicleManage */,
@@ -173,6 +279,9 @@
 				LastSwiftUpdateCheck = 1620;
 				LastUpgradeCheck = 1620;
 				TargetAttributes = {
+					F473DF222D70CFF7007F0716 = {
+						CreatedOnToolsVersion = 16.2;
+					};
 					F4F76ED82D60E45A002B7314 = {
 						CreatedOnToolsVersion = 16.2;
 					};
@@ -203,11 +312,19 @@
 				F4F76ED82D60E45A002B7314 /* VehicleManage */,
 				F4F76EEA2D60E45C002B7314 /* VehicleManageTests */,
 				F4F76EF42D60E45C002B7314 /* VehicleManageUITests */,
+				F473DF222D70CFF7007F0716 /* VehicleManageWidgetExtension */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		F473DF212D70CFF7007F0716 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		F4F76ED72D60E45A002B7314 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -232,6 +349,13 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		F473DF1F2D70CFF7007F0716 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		F4F76ED52D60E45A002B7314 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -256,6 +380,11 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		F473DF352D70CFF9007F0716 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = F473DF222D70CFF7007F0716 /* VehicleManageWidgetExtension */;
+			targetProxy = F473DF342D70CFF9007F0716 /* PBXContainerItemProxy */;
+		};
 		F4F76EED2D60E45C002B7314 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = F4F76ED82D60E45A002B7314 /* VehicleManage */;
@@ -269,6 +398,64 @@
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
+		F473DF392D70CFF9007F0716 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_ENTITLEMENTS = VehicleManageWidget/VehicleManageWidget.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = XC43HRR4X2;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = VehicleManageWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = VehicleManageWidget;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.1;
+				PRODUCT_BUNDLE_IDENTIFIER = ShaunChuang.VehicleManage.VehicleManageWidget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		F473DF3A2D70CFF9007F0716 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_ENTITLEMENTS = VehicleManageWidget/VehicleManageWidget.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = XC43HRR4X2;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = VehicleManageWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = VehicleManageWidget;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.1;
+				PRODUCT_BUNDLE_IDENTIFIER = ShaunChuang.VehicleManage.VehicleManageWidget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
 		F4F76EFD2D60E45C002B7314 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -400,13 +587,14 @@
 				DEVELOPMENT_TEAM = XC43HRR4X2;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "油耗通";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -425,20 +613,21 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = VehicleManage/VehicleManage.entitlements;
+				CODE_SIGN_ENTITLEMENTS = VehicleManage/VehicleManageRelease.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"VehicleManage/Preview Content\"";
 				DEVELOPMENT_TEAM = XC43HRR4X2;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "油耗通";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -527,6 +716,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		F473DF382D70CFF9007F0716 /* Build configuration list for PBXNativeTarget "VehicleManageWidgetExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F473DF392D70CFF9007F0716 /* Debug */,
+				F473DF3A2D70CFF9007F0716 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		F4F76ED42D60E459002B7314 /* Build configuration list for PBXProject "VehicleManage" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
