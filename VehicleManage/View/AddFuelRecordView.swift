@@ -1,5 +1,6 @@
 import SwiftData
 import SwiftUI
+import WidgetKit
 
 struct AddFuelRecordView: View {
     @Environment(\.dismiss) private var dismiss
@@ -146,6 +147,7 @@ struct AddFuelRecordView: View {
         
         do {
             try modelContext.save()
+            WidgetCenter.shared.reloadAllTimelines()
         } catch {
             print("Failed to save fuel record: \(error)")
         }

@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import WidgetKit
 
 struct AddVehicleView: View {
     @Environment(\.modelContext) private var modelContext
@@ -66,6 +67,7 @@ struct AddVehicleView: View {
             do {
                 try modelContext.save()
                 onVehicleAdded?(newVehicle)
+                WidgetCenter.shared.reloadAllTimelines()
             } catch {
                 print("Failed to save vehicle: \(error.localizedDescription)")
             }
@@ -82,5 +84,6 @@ struct AddVehicleView: View {
                 otherVehicle.isDefault = false
             }
         }
+        WidgetCenter.shared.reloadAllTimelines()
     }
 }

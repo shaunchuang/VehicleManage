@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import WidgetKit
 
 struct FuelRecordListView: View {
     @Bindable var vehicle: Vehicle
@@ -89,6 +90,7 @@ struct FuelRecordListView: View {
                 }
             }
             vehicle.updateFuelRecordCalculations()
+            WidgetCenter.shared.reloadAllTimelines()
         }
     }
 }

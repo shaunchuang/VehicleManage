@@ -10,7 +10,8 @@ enum DisplayMode {
 
 struct FuelEntry: TimelineEntry {
     let date: Date
-    let fuelPrices: [String: Double]
+    let fuelPrices: [String: Double] // 當前油價
+    let futureFuelPrices: [String: (price: Double, difference: Double)] // 未來油價和漲跌差異
     let averageFuelConsumption: Double
     let totalMileage: Double
     let defaultFuelType: FuelType
@@ -22,12 +23,30 @@ struct FuelEntry: TimelineEntry {
     let maxConsumption: Double
     let minConsumption: Double
     let costPerKm: Double
-    let vehicleName: String // 新增車輛名稱
-    let vehicleType: String // 新增車輛種類
+    let vehicleName: String
+    let vehicleType: String
     
-    init(date: Date, fuelPrices: [String: Double], averageFuelConsumption: Double, totalMileage: Double, defaultFuelType: FuelType, mode: DisplayMode, recordCount: Int = 0, totalCost: Double = 0.0, totalFuelAmount: Double = 0.0, rangeMileage: Double = 0.0, maxConsumption: Double = 0.0, minConsumption: Double = 0.0, costPerKm: Double = 0.0, vehicleName: String = "未知車輛", vehicleType: String = "car.fill") {
+    init(
+        date: Date,
+        fuelPrices: [String: Double],
+        futureFuelPrices: [String: (price: Double, difference: Double)] = [:], // 新增未來油價預設為空
+        averageFuelConsumption: Double,
+        totalMileage: Double,
+        defaultFuelType: FuelType,
+        mode: DisplayMode,
+        recordCount: Int = 0,
+        totalCost: Double = 0.0,
+        totalFuelAmount: Double = 0.0,
+        rangeMileage: Double = 0.0,
+        maxConsumption: Double = 0.0,
+        minConsumption: Double = 0.0,
+        costPerKm: Double = 0.0,
+        vehicleName: String = "未知車輛",
+        vehicleType: String = "car.fill"
+    ) {
         self.date = date
         self.fuelPrices = fuelPrices
+        self.futureFuelPrices = futureFuelPrices
         self.averageFuelConsumption = averageFuelConsumption
         self.totalMileage = totalMileage
         self.defaultFuelType = defaultFuelType

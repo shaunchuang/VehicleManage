@@ -4,18 +4,19 @@
 
 import SwiftUI
 
+// 載入畫面視圖
 struct LoadingView: View {
     var body: some View {
         VStack {
-            Spacer()
-            // 可替換為 App logo 或名稱
-            Text("油耗紀錄App開啟中")
-                .font(.largeTitle)
-                .bold()
-            ProgressView("讀取中...")
+            ProgressView()
                 .progressViewStyle(CircularProgressViewStyle())
-                .padding()
-            Spacer()
+                .scaleEffect(1.5)
+            Text("正在更新油價資料...")
+                .font(.body)
+                .foregroundColor(.gray)
+                .padding(.top, 10)
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color(.systemBackground))
     }
 }

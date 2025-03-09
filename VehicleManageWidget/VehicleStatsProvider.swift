@@ -1,3 +1,4 @@
+// VehicleStatsProvider.swift
 import WidgetKit
 import SwiftData
 
@@ -5,7 +6,7 @@ struct VehicleStatsProvider: TimelineProvider {
     func placeholder(in context: Context) -> FuelEntry {
         FuelEntry(
             date: Date(),
-            fuelPrices: ["98無鉛": 34.0, "95無鉛": 32.0, "92無鉛": 30.5, "柴油": 29.5], // 修改為 "柴油"
+            fuelPrices: ["98無鉛": 34.0, "95無鉛": 32.0, "92無鉛": 30.5, "柴油": 29.5],
             averageFuelConsumption: 15.2,
             totalMileage: 12345.6,
             defaultFuelType: .gas95,
@@ -19,7 +20,7 @@ struct VehicleStatsProvider: TimelineProvider {
         let mode: DisplayMode = context.family == .systemLarge ? .combined : .defaultFuelAndStats
         let entry = FuelEntry(
             date: Date(),
-            fuelPrices: ["98無鉛": 34.0, "95無鉛": 32.0, "92無鉛": 30.5, "柴油": 29.5], // 修改為 "柴油"
+            fuelPrices: ["98無鉛": 34.0, "95無鉛": 32.0, "92無鉛": 30.5, "柴油": 29.5],
             averageFuelConsumption: 15.2,
             totalMileage: 12345.6,
             defaultFuelType: .gas95,
@@ -33,6 +34,7 @@ struct VehicleStatsProvider: TimelineProvider {
     func getTimeline(in context: Context, completion: @escaping (Timeline<FuelEntry>) -> Void) {
         Task {
             var fuelPricesDict: [String: Double] = [:]
+            var futureFuelPricesDict: [String: (price: Double, difference: Double)] = [:]
             var avgFuelConsumption: Double = 0.0
             var totalMileage: Double = 0.0
             var defaultFuelType: FuelType = .gas95
@@ -76,10 +78,16 @@ struct VehicleStatsProvider: TimelineProvider {
                         case "無鉛汽油98": displayName = FuelType.gas98.rawValue
                         case "無鉛汽油95": displayName = FuelType.gas95.rawValue
                         case "無鉛汽油92": displayName = FuelType.gas92.rawValue
-                        case "超級/高級柴油": displayName = FuelType.diesel.rawValue // 這裡已經是 "柴油"
+                        case "超級/高級柴油": displayName = FuelType.diesel.rawValue
                         default: displayName = name
                         }
                         fuelPricesDict[displayName] = currentPrice.price
+                        
+                        // 檢查未來價格
+                        if let futurePrice = results.first(where: { $0.effectiveDate > now }) {
+                            let difference = futurePrice.price - currentPrice.price
+                            futureFuelPricesDict[displayName] = (price: futurePrice.price, difference: difference)
+                        }
                     }
                 }
                 
@@ -119,6 +127,7 @@ struct VehicleStatsProvider: TimelineProvider {
             let entry = FuelEntry(
                 date: Date(),
                 fuelPrices: fuelPricesDict,
+                futureFuelPrices: futureFuelPricesDict, // 傳入未來油價
                 averageFuelConsumption: avgFuelConsumption,
                 totalMileage: totalMileage,
                 defaultFuelType: defaultFuelType,

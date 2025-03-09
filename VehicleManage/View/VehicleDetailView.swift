@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import WidgetKit
 
 struct VehicleDetailView: View {
     @Environment(\.modelContext) private var modelContext
@@ -88,6 +89,7 @@ struct VehicleDetailView: View {
         clearOtherDefaults(except: vehicle)
         do {
             try modelContext.save()
+            WidgetCenter.shared.reloadAllTimelines()
         } catch {
             print("Failed to set default vehicle: \(error)")
         }
@@ -102,12 +104,14 @@ struct VehicleDetailView: View {
                 otherVehicle.isDefault = false
             }
         }
+        WidgetCenter.shared.reloadAllTimelines()
     }
     
     private func deleteVehicle() {
         modelContext.delete(vehicle)
         do {
             try modelContext.save()
+            WidgetCenter.shared.reloadAllTimelines()
             presentationMode.wrappedValue.dismiss()
         } catch {
             print("Failed to delete vehicle: \(error)")
