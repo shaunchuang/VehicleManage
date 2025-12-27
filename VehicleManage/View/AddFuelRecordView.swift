@@ -113,9 +113,6 @@ struct AddFuelRecordView: View {
         let f = Double(fuelAmount) ?? 0
         let c = Double(cost) ?? 0
 
-        let sortedRecords = vehicle.fuelRecords.sorted(by: { $0.date < $1.date })
-        let lastRecord = sortedRecords.last
-
         let newRecord = FuelRecord(
             date: date,
             mileage: m,
@@ -130,20 +127,8 @@ struct AddFuelRecordView: View {
 
         vehicle.fuelRecords.append(newRecord)
 
-        if let lastRecord = lastRecord {
-            let distance = m - lastRecord.mileage
-            lastRecord.drivenDistance = distance > 0 ? distance : 0
-            if lastRecord.fuelAmount > 0 {
-                lastRecord.averageFuelConsumption = lastRecord.drivenDistance / lastRecord.fuelAmount
-            } else {
-                lastRecord.averageFuelConsumption = 0
-            }
-            if lastRecord.drivenDistance > 0 {
-                lastRecord.costPerKm = lastRecord.cost / lastRecord.drivenDistance
-            } else {
-                lastRecord.costPerKm = 0
-            }
-        }
+        // 使用集中邏輯重新計算所有紀錄，避免與其他地方的重複與不一致
+        vehicle.updateFuelRecordCalculations()
         
         do {
             try modelContext.save()
