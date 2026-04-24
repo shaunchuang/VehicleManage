@@ -32,7 +32,7 @@ enum VehicleType: String, CaseIterable, Identifiable {
     }
     @Relationship(deleteRule: .cascade, inverse: \FuelRecord.vehicle)
     var fuelRecords: [FuelRecord] = []
-    @Attribute(.unique) var isDefault: Bool
+    var isDefault: Bool
 
     init(name: String, vehicleType: VehicleType, defaultFuelType: FuelType, isDefault: Bool = false) {
         self.name = name
@@ -44,34 +44,19 @@ enum VehicleType: String, CaseIterable, Identifiable {
 
 extension Vehicle {
     func updateFuelRecordCalculations() {
-        // 按日期排序紀錄
+        // 按日期排序紀錄（由舊到新）
         let sortedRecords = fuelRecords.sorted(by: { $0.date < $1.date })
 
-        // 遍歷所有紀錄，計算相關欄位
         for i in 0..<sortedRecords.count {
             let current = sortedRecords[i]
             if i < sortedRecords.count - 1 {
-                // 有下一筆紀錄，計算 drivenDistance
                 let next = sortedRecords[i + 1]
-                let distance = next.mileage - current.mileage
-                current.drivenDistance = distance > 0 ? distance : 0
-
-                // 計算 averageFuelConsumption
-                if current.fuelAmount > 0 {
-                    current.averageFuelConsumption =
-                        current.drivenDistance / current.fuelAmount
-                } else {
-                    current.averageFuelConsumption = 0
-                }
-
-                // 計算 costPerKm
-                if current.drivenDistance > 0 {
-                    current.costPerKm = current.cost / current.drivenDistance
-                } else {
-                    current.costPerKm = 0
-                }
+                let distance = FuelCalculator.drivenDistance(from: current.mileage, to: next.mileage)
+                current.drivenDistance = distance
+                current.averageFuelConsumption = FuelCalculator.fuelEconomy(distance: distance, fuelAmount: current.fuelAmount)
+                current.costPerKm = FuelCalculator.costPerKm(cost: current.cost, distance: distance)
             } else {
-                // 最後一筆紀錄，無下一筆紀錄，將計算欄位設為 0
+                // 最後一筆紀錄，無法計算至下一次加油的距離
                 current.drivenDistance = 0
                 current.averageFuelConsumption = 0
                 current.costPerKm = 0

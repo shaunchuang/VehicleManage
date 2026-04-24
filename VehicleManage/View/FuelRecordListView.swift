@@ -83,7 +83,9 @@ struct FuelRecordListView: View {
     
     private func deleteRecord(offsets: IndexSet) {
         withAnimation {
-            let sortedRecords = vehicle.fuelRecords.sorted(by: { $0.date < $1.date })
+            // Sort descending to match the displayed list order so the correct
+            // record is identified and removed.
+            let sortedRecords = vehicle.fuelRecords.sorted(by: { $0.date > $1.date })
             for index in offsets {
                 if let originalIndex = vehicle.fuelRecords.firstIndex(where: { $0.id == sortedRecords[index].id }) {
                     vehicle.fuelRecords.remove(at: originalIndex)

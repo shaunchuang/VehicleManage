@@ -15,13 +15,6 @@ struct EditFuelRecordView: View {
     @State private var fuelType: FuelType
     @State private var unitPrice: Double? = nil // 新增單價狀態
 
-    private let fuelTypeMapping: [FuelType: String] = [
-        .gas98: "無鉛汽油98",
-        .gas95: "無鉛汽油95",
-        .gas92: "無鉛汽油92",
-        .diesel: "超級/高級柴油",
-    ]
-
     private var dateRange: ClosedRange<Date> {
         let sortedRecords = vehicle.fuelRecords.sorted { $0.date < $1.date }
         guard let currentIndex = sortedRecords.firstIndex(where: { $0.id == record.id }) else {
@@ -154,7 +147,7 @@ struct EditFuelRecordView: View {
     }
 
     private func fetchFuelPrice(for fuelType: FuelType, on date: Date) -> Double? {
-        guard let productName = fuelTypeMapping[fuelType] else { return nil }
+        let productName = fuelType.cpcProductName
 
         do {
             var descriptor = FetchDescriptor<CPCFuelPriceModel>(
