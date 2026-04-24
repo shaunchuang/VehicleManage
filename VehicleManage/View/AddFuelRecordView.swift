@@ -15,13 +15,6 @@ struct AddFuelRecordView: View {
     @State private var unitPrice: Double? = nil
     @State private var showMileageError: Bool = false
 
-    private let fuelTypeMapping: [FuelType: String] = [
-        .gas98: "無鉛汽油98",
-        .gas95: "無鉛汽油95",
-        .gas92: "無鉛汽油92",
-        .diesel: "超級/高級柴油",
-    ]
-
     init(vehicle: Vehicle, fuelPrices: [String: Double]) {
         self.vehicle = vehicle
         _fuelType = State(initialValue: vehicle.defaultFuelType)
@@ -155,7 +148,7 @@ struct AddFuelRecordView: View {
     }
 
     private func fetchFuelPrice(for fuelType: FuelType, on date: Date) -> Double? {
-        guard let productName = fuelTypeMapping[fuelType] else { return nil }
+        let productName = fuelType.cpcProductName
 
         do {
             var descriptor = FetchDescriptor<CPCFuelPriceModel>(

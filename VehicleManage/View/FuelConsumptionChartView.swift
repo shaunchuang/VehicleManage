@@ -323,9 +323,10 @@ struct FuelConsumptionChartView: View {
     }
     
     private func overallAverageConsumption(in records: [FuelRecord]) -> Double {
-        let totalDistance = totalDistance(in: records)
-        let totalFuel = totalFuelAmount(in: records)
-        return totalFuel > 0 ? totalDistance / totalFuel : 0
+        FuelCalculator.overallAverageConsumption(
+            totalDistance: totalDistance(in: records),
+            totalFuel: totalFuelAmount(in: records)
+        )
     }
     
     private func maxConsumption(in records: [FuelRecord]) -> Double {
@@ -337,9 +338,10 @@ struct FuelConsumptionChartView: View {
     }
     
     private func averageCostPerKm(in records: [FuelRecord]) -> Double {
-        let totalCost = totalCost(in: records)
-        let totalDistance = totalDistance(in: records)
-        return totalDistance > 0 ? totalCost / totalDistance : 0
+        FuelCalculator.averageCostPerKm(
+            totalCost: totalCost(in: records),
+            totalDistance: totalDistance(in: records)
+        )
     }
     
     private func currentMileage() -> Double {
