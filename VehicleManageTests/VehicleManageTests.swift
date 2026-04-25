@@ -58,6 +58,13 @@ struct VehicleManageTests {
         #expect(FuelCalculator.estimatedCost(fuelAmount: 0, unitPrice: 32.5) == 0)
     }
 
+    // MARK: - FuelRecord
+
+    @Test func fuelRecord_roundsFuelAmountToTwoDecimalPlaces() {
+        #expect(FuelRecord.roundedFuelAmount(12.345) == 12.35)
+        #expect(FuelRecord.roundedFuelAmount(12.344) == 12.34)
+    }
+
     // MARK: - FuelCalculator: overallAverageConsumption
 
     @Test func overallAverageConsumption_normalValues() {

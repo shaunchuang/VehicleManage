@@ -36,7 +36,7 @@ struct EditFuelRecordView: View {
         self.vehicle = vehicle
         _date = State(initialValue: record.date)
         _mileage = State(initialValue: String(format: "%.1f", record.mileage))
-        _fuelAmount = State(initialValue: String(format: "%.1f", record.fuelAmount))
+        _fuelAmount = State(initialValue: String(format: "%.2f", record.fuelAmount))
         _cost = State(initialValue: String(format: "%.0f", record.cost))
         _fuelType = State(initialValue: record.fuelType)
     }
@@ -110,7 +110,7 @@ struct EditFuelRecordView: View {
 
     private func saveChanges() {
         let m = Double(mileage) ?? record.mileage
-        let f = Double(fuelAmount) ?? record.fuelAmount
+        let f = Double(fuelAmount).map(FuelRecord.roundedFuelAmount) ?? record.fuelAmount
         let c = Double(cost) ?? record.cost
 
         record.date = date

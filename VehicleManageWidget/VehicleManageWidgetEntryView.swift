@@ -355,7 +355,7 @@ struct VehicleManageWidgetEntryView: View {
                         StatItem(
                             label: "總油量",
                             value: String(
-                                format: "%.1f L", entry.totalFuelAmount),
+                                format: "%.2f L", entry.totalFuelAmount),
                             icon: "fuelpump.fill", color: .green, size: 14)
                         StatItem(
                             label: "總里程",

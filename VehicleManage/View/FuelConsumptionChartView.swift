@@ -288,7 +288,7 @@ struct FuelConsumptionChartView: View {
             ) {
                 StatItem(icon: "list.bullet", color: .purple, title: "紀錄筆數", value: "\(filteredRecords.count)")
                 StatItem(icon: "dollarsign.circle", color: .orange, title: "總花費", value: String(format: "$%.2f", totalCost(in: filteredRecords)))
-                StatItem(icon: "fuelpump.fill", color: .green, title: "總油量", value: String(format: "%.1f L", totalFuelAmount(in: filteredRecords)))
+                StatItem(icon: "fuelpump.fill", color: .green, title: "總油量", value: String(format: "%.2f L", totalFuelAmount(in: filteredRecords)))
                 StatItem(icon: "road.lanes", color: .blue, title: "範圍里程", value: String(format: "%.1f km", totalDistance(in: filteredRecords)))
                 StatItem(icon: "gauge", color: .gray, title: "總里程", value: String(format: "%.1f km", currentMileage()))
                 StatItem(icon: "chart.line.uptrend.xyaxis", color: .teal, title: "平均油耗", value: String(format: "%.2f km/L", overallAverageConsumption(in: filteredRecords)))

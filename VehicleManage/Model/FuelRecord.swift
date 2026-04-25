@@ -24,11 +24,15 @@ import SwiftData
     var costPerKm: Double
     var vehicle: Vehicle?  // 移除 @Relationship
 
+    static func roundedFuelAmount(_ value: Double) -> Double {
+        (value * 100).rounded() / 100
+    }
+
     init(date: Date, mileage: Double, fuelAmount: Double, cost: Double, fuelType: FuelType, drivenDistance: Double = 0, averageFuelConsumption: Double = 0, costPerKm: Double = 0, vehicle: Vehicle? = nil) {
         self.date = date
         self.mileage = mileage
         // 紀錄小數點後兩位 (Round to two decimal places)
-        self.fuelAmount = Double(round(100 * fuelAmount) / 100)
+        self.fuelAmount = FuelRecord.roundedFuelAmount(fuelAmount)
         self.cost = cost
         self.fuelTypeRawValue = fuelType.rawValue
         self.drivenDistance = drivenDistance

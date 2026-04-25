@@ -125,7 +125,7 @@ struct FuelRecordRow: View {
             HStack(spacing: 20) {
                 // 左側：里程與加油量
                 VStack(alignment: .leading, spacing: 8) {
-                    RecordItem(label: "加油量", value: String(format: "%.1f L", record.fuelAmount), icon: "fuelpump.fill", color: .blue)
+                    RecordItem(label: "加油量", value: String(format: "%.2f L", record.fuelAmount), icon: "fuelpump.fill", color: .blue)
                     RecordItem(label: "里程", value: String(format: "%.1f km", record.mileage), icon: "speedometer", color: .green)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
