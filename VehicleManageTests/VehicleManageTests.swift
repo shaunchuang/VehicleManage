@@ -77,4 +77,60 @@ struct VehicleManageTests {
     @Test func averageCostPerKm_zeroDistanceReturnsZero() {
         #expect(FuelCalculator.averageCostPerKm(totalCost: 2000, totalDistance: 0) == 0)
     }
+
+    // MARK: - FuelPriceImportPlanner
+
+    @Test func fuelPriceImportPlanner_insertsOnlyMissingDates() {
+        let oldDate = Date(timeIntervalSince1970: 1_000)
+        let newDate = Date(timeIntervalSince1970: 2_000)
+
+        let plan = FuelPriceImportPlanner.plan(
+            apiSnapshots: [
+                FuelPriceSnapshot(effectiveDate: oldDate, price: 31.2),
+                FuelPriceSnapshot(effectiveDate: newDate, price: 32.0),
+            ],
+            existingSnapshots: [
+                FuelPriceSnapshot(effectiveDate: oldDate, price: 31.2)
+            ]
+        )
+
+        #expect(plan.inserts == [FuelPriceSnapshot(effectiveDate: newDate, price: 32.0)])
+        #expect(plan.updates.isEmpty)
+        #expect(plan.duplicateDates.isEmpty)
+    }
+
+    @Test func fuelPriceImportPlanner_updatesChangedPriceForExistingDate() {
+        let effectiveDate = Date(timeIntervalSince1970: 3_000)
+
+        let plan = FuelPriceImportPlanner.plan(
+            apiSnapshots: [
+                FuelPriceSnapshot(effectiveDate: effectiveDate, price: 32.1)
+            ],
+            existingSnapshots: [
+                FuelPriceSnapshot(effectiveDate: effectiveDate, price: 31.8)
+            ]
+        )
+
+        #expect(plan.inserts.isEmpty)
+        #expect(plan.updates == [FuelPriceSnapshot(effectiveDate: effectiveDate, price: 32.1)])
+        #expect(plan.duplicateDates.isEmpty)
+    }
+
+    @Test func fuelPriceImportPlanner_detectsDuplicateStoredDates() {
+        let duplicateDate = Date(timeIntervalSince1970: 4_000)
+
+        let plan = FuelPriceImportPlanner.plan(
+            apiSnapshots: [
+                FuelPriceSnapshot(effectiveDate: duplicateDate, price: 30.5)
+            ],
+            existingSnapshots: [
+                FuelPriceSnapshot(effectiveDate: duplicateDate, price: 30.5),
+                FuelPriceSnapshot(effectiveDate: duplicateDate, price: 30.5),
+            ]
+        )
+
+        #expect(plan.inserts.isEmpty)
+        #expect(plan.updates.isEmpty)
+        #expect(plan.duplicateDates == [duplicateDate])
+    }
 }
