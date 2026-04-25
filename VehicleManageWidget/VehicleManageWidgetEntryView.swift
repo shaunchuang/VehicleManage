@@ -332,12 +332,8 @@ struct VehicleManageWidgetEntryView: View {
                         } else {
                             Text(
                                 entry.fuelPrices[entry.defaultFuelType.rawValue]
-                                    != nil
-                                    ? String(
-                                        format: "%.2f 元/公升",
-                                        entry.fuelPrices[
-                                            entry.defaultFuelType.rawValue]!)
-                                    : "無資料"
+                                    .map { String(format: "%.2f 元/公升", $0) }
+                                    ?? "無資料"
                             )
                             .font(.system(size: 14))
                             .foregroundStyle(.primary)
