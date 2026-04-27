@@ -66,6 +66,68 @@ struct VehicleManageTests {
         #expect(FuelRecord.roundedFuelAmount(12.344) == 12.34)
     }
 
+    @Test func fuelRecordMileageValidator_allowsMileageBetweenNeighboringDates() {
+        let vehicle = Vehicle(name: "Test Car", vehicleType: .car, defaultFuelType: .gas95)
+        let march1 = Date(timeIntervalSince1970: 1_740_787_200)
+        let march15 = Date(timeIntervalSince1970: 1_741_996_800)
+        let march31 = Date(timeIntervalSince1970: 1_743_379_200)
+
+        vehicle.fuelRecords = [
+            FuelRecord(date: march1, mileage: 1000, fuelAmount: 10, cost: 300, fuelType: .gas95, vehicle: vehicle),
+            FuelRecord(date: march31, mileage: 1300, fuelAmount: 10, cost: 300, fuelType: .gas95, vehicle: vehicle),
+        ]
+
+        let bounds = FuelRecordMileageValidator.bounds(for: march15, in: vehicle.fuelRecords)
+
+        #expect(bounds == .init(minimumMileage: 1000, maximumMileage: 1300))
+        #expect(FuelRecordMileageValidator.errorMessage(for: 1150, on: march15, in: vehicle.fuelRecords) == nil)
+    }
+
+    @Test func fuelRecordMileageValidator_rejectsMileageAboveNextRecordForMiddleDate() {
+        let vehicle = Vehicle(name: "Test Car", vehicleType: .car, defaultFuelType: .gas95)
+        let march1 = Date(timeIntervalSince1970: 1_740_787_200)
+        let march15 = Date(timeIntervalSince1970: 1_741_996_800)
+        let march31 = Date(timeIntervalSince1970: 1_743_379_200)
+
+        vehicle.fuelRecords = [
+            FuelRecord(date: march1, mileage: 1000, fuelAmount: 10, cost: 300, fuelType: .gas95, vehicle: vehicle),
+            FuelRecord(date: march31, mileage: 1300, fuelAmount: 10, cost: 300, fuelType: .gas95, vehicle: vehicle),
+        ]
+
+        let errorMessage = FuelRecordMileageValidator.errorMessage(for: 1350, on: march15, in: vehicle.fuelRecords)
+
+        #expect(errorMessage == "總里程數必須介於 1000.0 與 1300.0 公里之間")
+    }
+
+    @Test func fuelRecordMileageValidator_excludesEditedRecordWhenCalculatingBounds() {
+        let vehicle = Vehicle(name: "Test Car", vehicleType: .car, defaultFuelType: .gas95)
+        let march1 = Date(timeIntervalSince1970: 1_740_787_200)
+        let march15 = Date(timeIntervalSince1970: 1_741_996_800)
+        let march31 = Date(timeIntervalSince1970: 1_743_379_200)
+
+        let firstRecord = FuelRecord(date: march1, mileage: 1000, fuelAmount: 10, cost: 300, fuelType: .gas95, vehicle: vehicle)
+        let middleRecord = FuelRecord(date: march15, mileage: 1150, fuelAmount: 10, cost: 300, fuelType: .gas95, vehicle: vehicle)
+        let lastRecord = FuelRecord(date: march31, mileage: 1300, fuelAmount: 10, cost: 300, fuelType: .gas95, vehicle: vehicle)
+
+        vehicle.fuelRecords = [firstRecord, middleRecord, lastRecord]
+
+        let bounds = FuelRecordMileageValidator.bounds(
+            for: march15,
+            in: vehicle.fuelRecords,
+            excluding: middleRecord.id
+        )
+
+        #expect(bounds == .init(minimumMileage: 1000, maximumMileage: 1300))
+        #expect(
+            FuelRecordMileageValidator.errorMessage(
+                for: 900,
+                on: march15,
+                in: vehicle.fuelRecords,
+                excluding: middleRecord.id
+            ) == "總里程數必須介於 1000.0 與 1300.0 公里之間"
+        )
+    }
+
     // MARK: - FuelCalculator: overallAverageConsumption
 
     @Test func overallAverageConsumption_normalValues() {
