@@ -13,7 +13,7 @@ struct AddFuelRecordView: View {
     @State private var cost: String = ""
     @State private var fuelType: FuelType
     @State private var unitPrice: Double? = nil
-    @State private var showMileageError: Bool = false
+    @State private var mileageErrorMessage: String? = nil
 
     init(vehicle: Vehicle, fuelPrices: [String: Double]) {
         self.vehicle = vehicle
@@ -79,10 +79,8 @@ struct AddFuelRecordView: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("儲存") {
-                        if let lastRecord = vehicle.fuelRecords.sorted(by: { $0.date < $1.date }).last,
-                           let newMileage = Double(mileage),
-                           newMileage <= lastRecord.mileage {
-                            showMileageError = true
+                        if let errorMessage = validateMileage() {
+                            mileageErrorMessage = errorMessage
                             return
                         }
                         saveRecord()
@@ -91,9 +89,13 @@ struct AddFuelRecordView: View {
                 }
             }
             .alert(
-                "里程數錯誤", isPresented: $showMileageError,
+                "里程數錯誤",
+                isPresented: Binding(
+                    get: { mileageErrorMessage != nil },
+                    set: { if !$0 { mileageErrorMessage = nil } }
+                ),
                 actions: { Button("確定", role: .cancel) {} },
-                message: { Text("總里程數必須大於上一筆紀錄的總里程數") }
+                message: { Text(mileageErrorMessage ?? "") }
             )
             .onAppear {
                 calculateFuelCost() // 初始化單價
@@ -169,6 +171,18 @@ struct AddFuelRecordView: View {
             print("DEBUG: Error fetching fuel price: \(error)")
             return nil
         }
+    }
+
+    private func validateMileage() -> String? {
+        guard let newMileage = Double(mileage) else {
+            return nil
+        }
+
+        return FuelRecordMileageValidator.errorMessage(
+            for: newMileage,
+            on: date,
+            in: vehicle.fuelRecords
+        )
     }
 }
 

@@ -14,6 +14,7 @@ struct EditFuelRecordView: View {
     @State private var cost: String
     @State private var fuelType: FuelType
     @State private var unitPrice: Double? = nil // 新增單價狀態
+    @State private var mileageErrorMessage: String? = nil
 
     private var dateRange: ClosedRange<Date> {
         let sortedRecords = vehicle.fuelRecords.sorted { $0.date < $1.date }
@@ -96,12 +97,25 @@ struct EditFuelRecordView: View {
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("儲存") {
+                        if let errorMessage = validateMileage() {
+                            mileageErrorMessage = errorMessage
+                            return
+                        }
                         saveChanges()
                         dismiss()
                     }
                     .disabled(!isValidInput())
                 }
             }
+            .alert(
+                "里程數錯誤",
+                isPresented: Binding(
+                    get: { mileageErrorMessage != nil },
+                    set: { if !$0 { mileageErrorMessage = nil } }
+                ),
+                actions: { Button("確定", role: .cancel) {} },
+                message: { Text(mileageErrorMessage ?? "") }
+            )
             .onAppear {
                 calculateFuelCost() // 初始化單價
             }
@@ -172,5 +186,18 @@ struct EditFuelRecordView: View {
 
     private func isValidInput() -> Bool {
         return Double(mileage) != nil && Double(fuelAmount) != nil && Double(cost) != nil
+    }
+
+    private func validateMileage() -> String? {
+        guard let newMileage = Double(mileage) else {
+            return nil
+        }
+
+        return FuelRecordMileageValidator.errorMessage(
+            for: newMileage,
+            on: date,
+            in: vehicle.fuelRecords,
+            excluding: record.id
+        )
     }
 }
