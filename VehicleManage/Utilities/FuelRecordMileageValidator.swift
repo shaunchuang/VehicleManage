@@ -23,22 +23,65 @@ enum FuelRecordMileageValidator {
         in records: [FuelRecord],
         excluding excludedRecordID: UUID? = nil
     ) -> Bounds {
-        let sortedRecords = records
-            .filter { $0.id != excludedRecordID }
-            .sorted {
+        let filteredRecords = records.filter { $0.id != excludedRecordID }
+        let previousRecord = filteredRecords
+            .filter { $0.date < date }
+            .max {
+                if $0.date == $1.date {
+                    return $0.mileage < $1.mileage
+                }
+                return $0.date < $1.date
+            }
+        let nextRecord = filteredRecords
+            .filter { $0.date > date }
+            .min {
                 if $0.date == $1.date {
                     return $0.mileage < $1.mileage
                 }
                 return $0.date < $1.date
             }
 
-        let nextIndex = sortedRecords.firstIndex(where: { $0.date > date }) ?? sortedRecords.endIndex
-        let previousRecord = nextIndex > 0 ? sortedRecords[nextIndex - 1] : nil
-        let nextRecord = nextIndex < sortedRecords.endIndex ? sortedRecords[nextIndex] : nil
-
         return Bounds(
             minimumMileage: previousRecord?.mileage,
             maximumMileage: nextRecord?.mileage
+        )
+    }
+
+    static func bounds(
+        for mileage: Double,
+        on date: Date,
+        in records: [FuelRecord],
+        excluding excludedRecordID: UUID? = nil
+    ) -> Bounds {
+        let filteredRecords = records.filter { $0.id != excludedRecordID }
+
+        let previousDateRecord = filteredRecords
+            .filter { $0.date < date }
+            .max {
+                if $0.date == $1.date {
+                    return $0.mileage < $1.mileage
+                }
+                return $0.date < $1.date
+            }
+        let nextDateRecord = filteredRecords
+            .filter { $0.date > date }
+            .min {
+                if $0.date == $1.date {
+                    return $0.mileage < $1.mileage
+                }
+                return $0.date < $1.date
+            }
+
+        let sameDayRecords = filteredRecords
+            .filter { $0.date == date }
+            .sorted { $0.mileage < $1.mileage }
+
+        let previousSameDayRecord = sameDayRecords.last(where: { $0.mileage <= mileage })
+        let nextSameDayRecord = sameDayRecords.first(where: { $0.mileage >= mileage })
+
+        return Bounds(
+            minimumMileage: previousSameDayRecord?.mileage ?? previousDateRecord?.mileage,
+            maximumMileage: nextSameDayRecord?.mileage ?? nextDateRecord?.mileage
         )
     }
 
@@ -48,7 +91,7 @@ enum FuelRecordMileageValidator {
         in records: [FuelRecord],
         excluding excludedRecordID: UUID? = nil
     ) -> String? {
-        let bounds = bounds(for: date, in: records, excluding: excludedRecordID)
+        let bounds = bounds(for: mileage, on: date, in: records, excluding: excludedRecordID)
 
         guard !bounds.contains(mileage) else {
             return nil
