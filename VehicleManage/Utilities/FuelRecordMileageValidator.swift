@@ -23,22 +23,24 @@ enum FuelRecordMileageValidator {
         in records: [FuelRecord],
         excluding excludedRecordID: UUID? = nil
     ) -> Bounds {
+        let calendar = Calendar.current
+        let targetDay = calendar.startOfDay(for: date)
         let filteredRecords = records.filter { $0.id != excludedRecordID }
         let previousRecord = filteredRecords
-            .filter { $0.date < date }
+            .filter { calendar.startOfDay(for: $0.date) < targetDay }
             .max {
-                if $0.date == $1.date {
-                    return $0.mileage < $1.mileage
-                }
-                return $0.date < $1.date
+                let day0 = calendar.startOfDay(for: $0.date)
+                let day1 = calendar.startOfDay(for: $1.date)
+                if day0 == day1 { return $0.mileage < $1.mileage }
+                return day0 < day1
             }
         let nextRecord = filteredRecords
-            .filter { $0.date > date }
+            .filter { calendar.startOfDay(for: $0.date) > targetDay }
             .min {
-                if $0.date == $1.date {
-                    return $0.mileage < $1.mileage
-                }
-                return $0.date < $1.date
+                let day0 = calendar.startOfDay(for: $0.date)
+                let day1 = calendar.startOfDay(for: $1.date)
+                if day0 == day1 { return $0.mileage < $1.mileage }
+                return day0 < day1
             }
 
         return Bounds(
@@ -53,27 +55,29 @@ enum FuelRecordMileageValidator {
         in records: [FuelRecord],
         excluding excludedRecordID: UUID? = nil
     ) -> Bounds {
+        let calendar = Calendar.current
+        let targetDay = calendar.startOfDay(for: date)
         let filteredRecords = records.filter { $0.id != excludedRecordID }
 
         let previousDateRecord = filteredRecords
-            .filter { $0.date < date }
+            .filter { calendar.startOfDay(for: $0.date) < targetDay }
             .max {
-                if $0.date == $1.date {
-                    return $0.mileage < $1.mileage
-                }
-                return $0.date < $1.date
+                let day0 = calendar.startOfDay(for: $0.date)
+                let day1 = calendar.startOfDay(for: $1.date)
+                if day0 == day1 { return $0.mileage < $1.mileage }
+                return day0 < day1
             }
         let nextDateRecord = filteredRecords
-            .filter { $0.date > date }
+            .filter { calendar.startOfDay(for: $0.date) > targetDay }
             .min {
-                if $0.date == $1.date {
-                    return $0.mileage < $1.mileage
-                }
-                return $0.date < $1.date
+                let day0 = calendar.startOfDay(for: $0.date)
+                let day1 = calendar.startOfDay(for: $1.date)
+                if day0 == day1 { return $0.mileage < $1.mileage }
+                return day0 < day1
             }
 
         let sameDayRecords = filteredRecords
-            .filter { $0.date == date }
+            .filter { calendar.isDate($0.date, inSameDayAs: date) }
             .sorted { $0.mileage < $1.mileage }
 
         let previousSameDayRecord = sameDayRecords.last(where: { $0.mileage <= mileage })

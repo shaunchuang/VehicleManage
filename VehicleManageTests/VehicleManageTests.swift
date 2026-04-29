@@ -128,6 +128,54 @@ struct VehicleManageTests {
         )
     }
 
+    @Test func fuelRecordMileageValidator_sameDayRecordsAreSeparatedByMileage() {
+        let vehicle = Vehicle(name: "Test Car", vehicleType: .car, defaultFuelType: .gas95)
+        let base = Date(timeIntervalSince1970: 1_741_996_800)         // 2025-03-15 00:00 UTC
+        let prevDay = base.addingTimeInterval(-86400)                  // 2025-03-14 00:00 UTC
+        let morning = base.addingTimeInterval(3600 * 8)               // 2025-03-15 08:00 UTC
+        let evening = base.addingTimeInterval(3600 * 16)              // 2025-03-15 16:00 UTC
+        let nextDay = base.addingTimeInterval(86400)                   // 2025-03-16 00:00 UTC
+        let validationTime = base.addingTimeInterval(3600 * 12)       // 2025-03-15 12:00 UTC
+
+        vehicle.fuelRecords = [
+            FuelRecord(date: prevDay, mileage: 900, fuelAmount: 10, cost: 300, fuelType: .gas95, vehicle: vehicle),
+            FuelRecord(date: morning, mileage: 1100, fuelAmount: 10, cost: 300, fuelType: .gas95, vehicle: vehicle),
+            FuelRecord(date: evening, mileage: 1200, fuelAmount: 10, cost: 300, fuelType: .gas95, vehicle: vehicle),
+            FuelRecord(date: nextDay, mileage: 1400, fuelAmount: 10, cost: 300, fuelType: .gas95, vehicle: vehicle),
+        ]
+
+        // A mileage between the two same-day records should be valid
+        #expect(
+            FuelRecordMileageValidator.errorMessage(for: 1150, on: validationTime, in: vehicle.fuelRecords) == nil
+        )
+        // A mileage below the prev-day bound (900) is rejected; upper bound comes from the first same-day record (1100)
+        #expect(
+            FuelRecordMileageValidator.errorMessage(for: 850, on: validationTime, in: vehicle.fuelRecords) == "總里程數必須介於 900.0 與 1100.0 公里之間"
+        )
+        // A mileage above the last same-day record (1200) is rejected; lower bound comes from that record, upper from next-day (1400)
+        #expect(
+            FuelRecordMileageValidator.errorMessage(for: 1450, on: validationTime, in: vehicle.fuelRecords) == "總里程數必須介於 1200.0 與 1400.0 公里之間"
+        )
+    }
+
+    @Test func fuelRecordMileageValidator_sameDayRecordsRespectCalendarDay() {
+        let vehicle = Vehicle(name: "Test Car", vehicleType: .car, defaultFuelType: .gas95)
+        // Record stored at one time on 2025-03-15; validation target uses a later time on the same day.
+        let storedTime = Date(timeIntervalSince1970: 1_741_996_800)           // 2025-03-15 00:00 UTC
+        let differentTime = storedTime.addingTimeInterval(3600 * 2)           // 2025-03-15 02:00 UTC
+
+        let record = FuelRecord(date: storedTime, mileage: 1100, fuelAmount: 10, cost: 300, fuelType: .gas95, vehicle: vehicle)
+        vehicle.fuelRecords = [record]
+
+        // The stored record should be treated as same-day (not previous-day).
+        // Mileage 1050 is below the same-day record but has no prev-day bound, so it is valid.
+        // With strict timestamp equality the record would fall into the previous-day bucket,
+        // making 1050 invalid (wrongly capped at 1100 from below).
+        #expect(
+            FuelRecordMileageValidator.errorMessage(for: 1050, on: differentTime, in: vehicle.fuelRecords) == nil
+        )
+    }
+
     // MARK: - FuelCalculator: overallAverageConsumption
 
     @Test func overallAverageConsumption_normalValues() {

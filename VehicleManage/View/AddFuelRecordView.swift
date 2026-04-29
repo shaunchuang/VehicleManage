@@ -175,7 +175,7 @@ struct AddFuelRecordView: View {
 
     private func validateMileage() -> String? {
         guard let newMileage = Double(mileage) else {
-            return nil
+            return "請輸入有效的里程數"
         }
 
         return FuelRecordMileageValidator.errorMessage(
