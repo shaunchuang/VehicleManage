@@ -130,12 +130,19 @@ struct VehicleManageTests {
 
     @Test func fuelRecordMileageValidator_sameDayRecordsAreSeparatedByMileage() {
         let vehicle = Vehicle(name: "Test Car", vehicleType: .car, defaultFuelType: .gas95)
-        let base = Date(timeIntervalSince1970: 1_741_996_800)         // 2025-03-15 00:00 UTC
-        let prevDay = base.addingTimeInterval(-86400)                  // 2025-03-14 00:00 UTC
-        let morning = base.addingTimeInterval(3600 * 8)               // 2025-03-15 08:00 UTC
-        let evening = base.addingTimeInterval(3600 * 16)              // 2025-03-15 16:00 UTC
-        let nextDay = base.addingTimeInterval(86400)                   // 2025-03-16 00:00 UTC
-        let validationTime = base.addingTimeInterval(3600 * 12)       // 2025-03-15 12:00 UTC
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "Asia/Taipei")!
+        let makeDate = { (year: Int, month: Int, day: Int, hour: Int) -> Date in
+            guard let date = calendar.date(from: DateComponents(
+                year: year, month: month, day: day, hour: hour, minute: 0
+            )) else { fatalError("Failed to construct test date") }
+            return date
+        }
+        let prevDay        = makeDate(2025, 3, 14, 12)  // 2025-03-14 12:00 Asia/Taipei = 04:00 UTC
+        let morning        = makeDate(2025, 3, 15, 10)  // 2025-03-15 10:00 Asia/Taipei = 02:00 UTC
+        let validationTime = makeDate(2025, 3, 15, 12)  // 2025-03-15 12:00 Asia/Taipei = 04:00 UTC
+        let evening        = makeDate(2025, 3, 15, 18)  // 2025-03-15 18:00 Asia/Taipei = 10:00 UTC
+        let nextDay        = makeDate(2025, 3, 16, 12)  // 2025-03-16 12:00 Asia/Taipei = 04:00 UTC
 
         vehicle.fuelRecords = [
             FuelRecord(date: prevDay, mileage: 900, fuelAmount: 10, cost: 300, fuelType: .gas95, vehicle: vehicle),
@@ -161,8 +168,16 @@ struct VehicleManageTests {
     @Test func fuelRecordMileageValidator_sameDayRecordsRespectCalendarDay() {
         let vehicle = Vehicle(name: "Test Car", vehicleType: .car, defaultFuelType: .gas95)
         // Record stored at one time on 2025-03-15; validation target uses a later time on the same day.
-        let storedTime = Date(timeIntervalSince1970: 1_741_996_800)           // 2025-03-15 00:00 UTC
-        let differentTime = storedTime.addingTimeInterval(3600 * 2)           // 2025-03-15 02:00 UTC
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "Asia/Taipei")!
+        let makeDate = { (year: Int, month: Int, day: Int, hour: Int) -> Date in
+            guard let date = calendar.date(from: DateComponents(
+                year: year, month: month, day: day, hour: hour, minute: 0
+            )) else { fatalError("Failed to construct test date") }
+            return date
+        }
+        let storedTime    = makeDate(2025, 3, 15, 10)  // 2025-03-15 10:00 Asia/Taipei = 02:00 UTC
+        let differentTime = makeDate(2025, 3, 15, 14)  // 2025-03-15 14:00 Asia/Taipei = 06:00 UTC
 
         let record = FuelRecord(date: storedTime, mileage: 1100, fuelAmount: 10, cost: 300, fuelType: .gas95, vehicle: vehicle)
         vehicle.fuelRecords = [record]
