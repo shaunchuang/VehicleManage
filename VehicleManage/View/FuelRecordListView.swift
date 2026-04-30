@@ -106,7 +106,9 @@ struct FuelRecordRow: View {
             HStack {
                 Text(record.date, format: Date.FormatStyle()
                     .locale(Locale(identifier: "zh-Hant-TW"))
-                    .year().month().day().weekday(.wide))
+                    .year(.defaultDigits)
+                    .month(.twoDigits)
+                    .day(.twoDigits))
                     .font(.subheadline)
                     .foregroundStyle(.primary)
                 
