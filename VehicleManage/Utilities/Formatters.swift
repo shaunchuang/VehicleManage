@@ -4,6 +4,7 @@ enum AppFormatters {
     static let zhTWDate: DateFormatter = {
         let f = DateFormatter()
         f.locale = Locale(identifier: "zh-Hant-TW")
+        f.calendar = Calendar(identifier: .gregorian)
         f.dateFormat = "yyyy年M月d日"
         return f
     }()

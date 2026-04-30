@@ -104,11 +104,7 @@ struct FuelRecordRow: View {
         VStack(alignment: .leading, spacing: 12) {
             // 日期與油品標籤
             HStack {
-                Text(record.date, format: Date.FormatStyle()
-                    .locale(Locale(identifier: "zh-Hant-TW"))
-                    .year(.defaultDigits)
-                    .month(.twoDigits)
-                    .day(.twoDigits))
+                Text(AppFormatters.dateString(record.date))
                     .font(.subheadline)
                     .foregroundStyle(.primary)
                 
