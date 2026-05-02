@@ -127,6 +127,7 @@ struct AddFuelRecordView: View {
         
         do {
             try modelContext.save()
+            WidgetCacheUpdater.update(from: modelContext)
             WidgetCenter.shared.reloadAllTimelines()
         } catch {
             print("Failed to save fuel record: \(error)")

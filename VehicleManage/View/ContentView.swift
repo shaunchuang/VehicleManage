@@ -282,6 +282,8 @@ struct ContentView: View {
                     }
                 }
             }
+            // 更新 widget 快取（包含車輛統計與油價資料）
+            WidgetCacheUpdater.update(from: modelContext)
             WidgetCenter.shared.reloadAllTimelines()
         } catch {
             print("獲取油價資料失敗: \(error)")
@@ -308,6 +310,7 @@ struct ContentView: View {
 
         do {
             try modelContext.save()
+            WidgetCacheUpdater.update(from: modelContext)
             WidgetCenter.shared.reloadAllTimelines()
         } catch {
             print("Failed to save after moving vehicles: \(error)")
@@ -336,6 +339,7 @@ struct ContentView: View {
             }
             do {
                 try modelContext.save()
+                WidgetCacheUpdater.update(from: modelContext)
                 WidgetCenter.shared.reloadAllTimelines()
             } catch {
                 print("Failed to ensure single default vehicle: \(error)")

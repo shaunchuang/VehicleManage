@@ -47,6 +47,10 @@ struct RootView: View {
             print("DEBUG: 超過一天未更新，執行 CPC API 抓取")
             await FuelPriceManager(context: modelContainer.mainContext).fetchDataFromCPCAPI()
             lastFetchDate = now // 更新抓取時間
+            // 油價更新後同步刷新 widget 快取
+            await MainActor.run {
+                WidgetCacheUpdater.update(from: modelContainer.mainContext)
+            }
             WidgetCenter.shared.reloadAllTimelines()
         } else {
             print("DEBUG: 距離上次更新不到一天，跳過抓取資料")

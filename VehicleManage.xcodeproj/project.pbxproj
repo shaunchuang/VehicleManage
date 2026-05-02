@@ -75,6 +75,7 @@
 				Model/FuelType.swift,
 				Model/Vehicle.swift,
 				Utilities/FuelCalculator.swift,
+				Utilities/WidgetDataCache.swift,
 			);
 			target = F473DF222D70CFF7007F0716 /* VehicleManageWidgetExtension */;
 		};

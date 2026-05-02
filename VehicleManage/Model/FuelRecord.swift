@@ -9,7 +9,7 @@ import Foundation
 import SwiftData
 
 @Model class FuelRecord {
-    @Attribute(.unique) var id: UUID = UUID()
+    var id: UUID = UUID()
     var date: Date
     var mileage: Double
     var fuelAmount: Double
