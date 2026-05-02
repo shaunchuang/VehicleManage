@@ -18,7 +18,7 @@ enum VehicleType: String, CaseIterable, Identifiable {
 }
 
 @Model class Vehicle {
-    @Attribute(.unique) var id: UUID = UUID()
+    var id: UUID = UUID()
     var name: String
     var vehicleTypeRawValue: String
     var vehicleType: VehicleType {
