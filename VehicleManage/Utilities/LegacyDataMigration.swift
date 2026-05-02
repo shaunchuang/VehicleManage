@@ -14,13 +14,16 @@
 //   • All errors are caught and logged; migration failure does not crash the app.
 //
 // Assumptions about the legacy CoreData/SwiftData SQLite schema:
-//   • Table ZVEHICLE with columns Z_PK, ZNAME, ZVEHICLETYPERAWVALUE,
-//     ZDEFAULTFUELTYPERAWVALUE, ZISDEFAULT
-//   • Table ZFUELRECORD with columns ZDATE, ZMILEAGE, ZFUELAMOUNT, ZCOST,
-//     ZFUELTYPERAWVALUE, ZDRIVENDISTANCE, ZAVERAGEFUELCONSUMPTION,
-//     ZCOSTPERKM, ZVEHICLE (FK → ZVEHICLE.Z_PK)
+//   • Table ZVEHICLE with columns Z_PK, ZID (UUID string), ZNAME,
+//     ZVEHICLETYPERAWVALUE, ZDEFAULTFUELTYPERAWVALUE, ZISDEFAULT
+//   • Table ZFUELRECORD with columns ZID (UUID string), ZDATE, ZMILEAGE,
+//     ZFUELAMOUNT, ZCOST, ZFUELTYPERAWVALUE, ZDRIVENDISTANCE,
+//     ZAVERAGEFUELCONSUMPTION, ZCOSTPERKM, ZVEHICLE (FK → ZVEHICLE.Z_PK)
 //   These follow CoreData's uppercase Z-prefix naming convention which
 //   SwiftData inherits.
+//   ZID columns are read and preserved so that each logical record gets the
+//   same UUID on every device, preventing CloudKit from treating the same
+//   row as distinct records during multi-device first-run migration.
 
 import Foundation
 import SwiftData
@@ -127,7 +130,7 @@ enum LegacyDataMigration {
         map: inout [Int32: Vehicle]
     ) throws {
         let sql = """
-            SELECT Z_PK, ZNAME, ZVEHICLETYPERAWVALUE, ZDEFAULTFUELTYPERAWVALUE, ZISDEFAULT
+            SELECT Z_PK, ZID, ZNAME, ZVEHICLETYPERAWVALUE, ZDEFAULTFUELTYPERAWVALUE, ZISDEFAULT
             FROM ZVEHICLE
         """
         var stmt: OpaquePointer?
@@ -136,10 +139,11 @@ enum LegacyDataMigration {
 
         while sqlite3_step(stmt) == SQLITE_ROW {
             let pk = sqlite3_column_int(stmt, 0)
-            let name = text(stmt, 1) ?? "未命名"
-            let typeRaw = text(stmt, 2) ?? VehicleType.car.rawValue
-            let fuelRaw = text(stmt, 3) ?? FuelType.gas95.rawValue
-            let isDefault = sqlite3_column_int(stmt, 4) != 0
+            let vehicleID = text(stmt, 1).flatMap { UUID(uuidString: $0) } ?? UUID()
+            let name = text(stmt, 2) ?? "未命名"
+            let typeRaw = text(stmt, 3) ?? VehicleType.car.rawValue
+            let fuelRaw = text(stmt, 4) ?? FuelType.gas95.rawValue
+            let isDefault = sqlite3_column_int(stmt, 5) != 0
 
             let vehicle = Vehicle(
                 name: name,
@@ -147,6 +151,7 @@ enum LegacyDataMigration {
                 defaultFuelType: FuelType(rawValue: fuelRaw) ?? .gas95,
                 isDefault: isDefault
             )
+            vehicle.id = vehicleID
             context.insert(vehicle)
             map[pk] = vehicle
         }
@@ -158,7 +163,7 @@ enum LegacyDataMigration {
         vehicleMap: [Int32: Vehicle]
     ) throws {
         let sql = """
-            SELECT ZDATE, ZMILEAGE, ZFUELAMOUNT, ZCOST, ZFUELTYPERAWVALUE,
+            SELECT ZID, ZDATE, ZMILEAGE, ZFUELAMOUNT, ZCOST, ZFUELTYPERAWVALUE,
                    ZDRIVENDISTANCE, ZAVERAGEFUELCONSUMPTION, ZCOSTPERKM, ZVEHICLE
             FROM ZFUELRECORD
         """
@@ -167,17 +172,18 @@ enum LegacyDataMigration {
         defer { sqlite3_finalize(stmt) }
 
         while sqlite3_step(stmt) == SQLITE_ROW {
+            let recordID = text(stmt, 0).flatMap { UUID(uuidString: $0) } ?? UUID()
             // CoreData stores dates as seconds since 2001-01-01 (NSDate reference date).
-            let dateInterval = sqlite3_column_double(stmt, 0)
+            let dateInterval = sqlite3_column_double(stmt, 1)
             let date = Date(timeIntervalSinceReferenceDate: dateInterval)
-            let mileage = sqlite3_column_double(stmt, 1)
-            let fuelAmount = sqlite3_column_double(stmt, 2)
-            let cost = sqlite3_column_double(stmt, 3)
-            let fuelTypeRaw = text(stmt, 4) ?? FuelType.gas95.rawValue
-            let drivenDistance = sqlite3_column_double(stmt, 5)
-            let avgFuelConsumption = sqlite3_column_double(stmt, 6)
-            let costPerKm = sqlite3_column_double(stmt, 7)
-            let vehiclePK = sqlite3_column_int(stmt, 8)
+            let mileage = sqlite3_column_double(stmt, 2)
+            let fuelAmount = sqlite3_column_double(stmt, 3)
+            let cost = sqlite3_column_double(stmt, 4)
+            let fuelTypeRaw = text(stmt, 5) ?? FuelType.gas95.rawValue
+            let drivenDistance = sqlite3_column_double(stmt, 6)
+            let avgFuelConsumption = sqlite3_column_double(stmt, 7)
+            let costPerKm = sqlite3_column_double(stmt, 8)
+            let vehiclePK = sqlite3_column_int(stmt, 9)
 
             let record = FuelRecord(
                 date: date,
@@ -190,6 +196,7 @@ enum LegacyDataMigration {
                 costPerKm: costPerKm,
                 vehicle: vehicleMap[vehiclePK]
             )
+            record.id = recordID
             context.insert(record)
         }
     }
