@@ -19,7 +19,8 @@ enum WidgetCacheUpdater {
 
             // ── Default vehicle stats ──────────────────────────────────────
             let vehicleDescriptor = FetchDescriptor<Vehicle>(
-                predicate: #Predicate { $0.isDefault == true }
+                predicate: #Predicate { $0.isDefault == true },
+                sortBy: [SortDescriptor(\.name)]
             )
             if let defaultVehicle = try context.fetch(vehicleDescriptor).first {
                 cache.vehicleName = defaultVehicle.name
