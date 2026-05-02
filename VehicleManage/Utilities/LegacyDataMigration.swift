@@ -28,40 +28,66 @@ import SQLite3
 
 enum LegacyDataMigration {
 
-    private static let migrationKey = "cloudKitMigrationCompleted_v1"
-    private static let suiteName = "group.ShaunChuang.VehicleManage"
+    enum MigrationOutcome: Equatable {
+        case skippedAlreadyCompleted
+        case skippedMissingLegacyStore
+        case migrated(vehicleCount: Int)
+        case failed(message: String)
+    }
+
+    static let migrationKey = "cloudKitMigrationCompleted_v1"
+    static let lastMigrationErrorKey = "cloudKitMigrationLastError_v1"
+    static let suiteName = "group.ShaunChuang.VehicleManage"
+
+    private static var migrationDefaults: UserDefaults? {
+        UserDefaults(suiteName: suiteName)
+    }
 
     static var isMigrationDone: Bool {
-        UserDefaults(suiteName: suiteName)?.bool(forKey: migrationKey) ?? false
+        migrationDefaults?.bool(forKey: migrationKey) ?? false
+    }
+
+    static var lastMigrationError: String? {
+        migrationDefaults?.string(forKey: lastMigrationErrorKey)
     }
 
     /// Checks if the legacy vehiclemanage.sqlite is present and, if so,
     /// copies its Vehicle + FuelRecord rows into `targetContext`.
     /// Must be called on the main actor.
+    @discardableResult
     @MainActor
-    static func migrateIfNeeded(targetContext: ModelContext, groupURL: URL) {
-        guard !isMigrationDone else { return }
+    static func migrateIfNeeded(targetContext: ModelContext, groupURL: URL) -> MigrationOutcome {
+        guard !isMigrationDone else { return .skippedAlreadyCompleted }
 
         let legacyURL = groupURL.appendingPathComponent("vehiclemanage.sqlite")
         guard FileManager.default.fileExists(atPath: legacyURL.path) else {
             markDone()
-            return
+            return .skippedMissingLegacyStore
         }
 
         do {
             let count = try migrateData(from: legacyURL, to: targetContext)
             markDone()
             print("舊資料遷移完成，共匯入 \(count) 筆車輛")
+            return .migrated(vehicleCount: count)
         } catch {
+            let message = error.localizedDescription
+            recordFailure(message)
             // Non-fatal – the user can re-add data manually.
             print("舊資料遷移失敗（可忽略，下次啟動會重試）：\(error)")
+            return .failed(message: message)
         }
     }
 
     // MARK: - Internal
 
     private static func markDone() {
-        UserDefaults(suiteName: suiteName)?.set(true, forKey: migrationKey)
+        migrationDefaults?.set(true, forKey: migrationKey)
+        migrationDefaults?.removeObject(forKey: lastMigrationErrorKey)
+    }
+
+    private static func recordFailure(_ message: String) {
+        migrationDefaults?.set(message, forKey: lastMigrationErrorKey)
     }
 
     /// Returns the number of vehicles successfully imported.
