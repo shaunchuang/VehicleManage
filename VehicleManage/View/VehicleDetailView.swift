@@ -89,6 +89,7 @@ struct VehicleDetailView: View {
         clearOtherDefaults(except: vehicle)
         do {
             try modelContext.save()
+            WidgetCacheUpdater.update(from: modelContext)
             WidgetCenter.shared.reloadAllTimelines()
         } catch {
             print("Failed to set default vehicle: \(error)")
@@ -104,13 +105,13 @@ struct VehicleDetailView: View {
                 otherVehicle.isDefault = false
             }
         }
-        WidgetCenter.shared.reloadAllTimelines()
     }
     
     private func deleteVehicle() {
         modelContext.delete(vehicle)
         do {
             try modelContext.save()
+            WidgetCacheUpdater.update(from: modelContext)
             WidgetCenter.shared.reloadAllTimelines()
             presentationMode.wrappedValue.dismiss()
         } catch {

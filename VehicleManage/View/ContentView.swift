@@ -310,6 +310,7 @@ struct ContentView: View {
 
         do {
             try modelContext.save()
+            WidgetCacheUpdater.update(from: modelContext)
             WidgetCenter.shared.reloadAllTimelines()
         } catch {
             print("Failed to save after moving vehicles: \(error)")
@@ -338,6 +339,7 @@ struct ContentView: View {
             }
             do {
                 try modelContext.save()
+                WidgetCacheUpdater.update(from: modelContext)
                 WidgetCenter.shared.reloadAllTimelines()
             } catch {
                 print("Failed to ensure single default vehicle: \(error)")

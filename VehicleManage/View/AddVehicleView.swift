@@ -67,6 +67,7 @@ struct AddVehicleView: View {
             do {
                 try modelContext.save()
                 onVehicleAdded?(newVehicle)
+                WidgetCacheUpdater.update(from: modelContext)
                 WidgetCenter.shared.reloadAllTimelines()
             } catch {
                 print("Failed to save vehicle: \(error.localizedDescription)")
@@ -84,6 +85,5 @@ struct AddVehicleView: View {
                 otherVehicle.isDefault = false
             }
         }
-        WidgetCenter.shared.reloadAllTimelines()
     }
 }

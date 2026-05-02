@@ -70,7 +70,9 @@ struct VehicleManageApp: App {
                 for: fullSchema,
                 configurations: fallbackSyncedConfig, localConfig
             )
-            scheduleLegacyMigration(container: container, groupURL: groupURL)
+            // Do NOT run migration here: marking it done against the local-only
+            // store would prevent it from running later when CloudKit is
+            // properly provisioned, stranding the user's pre-upgrade data.
             return container
         }
     }
