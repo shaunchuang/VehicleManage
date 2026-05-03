@@ -58,12 +58,12 @@ struct VehicleManageApp: App {
             scheduleLegacyMigration(container: container, groupURL: groupURL)
             return container
         } catch {
-            // CloudKit container creation failed (e.g. entitlements not yet
-            // provisioned in the developer portal). If the user is upgrading
-            // from the pre-CloudKit build, keep opening the original App Group
-            // store so their existing local data stays visible until sync is
-            // available.
-            print("CloudKit 容器建立失敗，改用本機儲存：\(error)")
+            // The primary container setup can fail because CloudKit-backed
+            // storage is unavailable or because one of the configured local
+            // stores cannot be opened. If the user is upgrading from the
+            // pre-CloudKit build, keep opening the original App Group store so
+            // their existing local data stays visible until sync is available.
+            print("主要資料容器建立失敗，嘗試使用備援儲存：\(error)")
             let legacyStoreURL = groupURL.appendingPathComponent(legacyStoreFileName)
             if FileManager.default.fileExists(atPath: legacyStoreURL.path) {
                 do {
