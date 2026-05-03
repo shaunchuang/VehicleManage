@@ -120,7 +120,7 @@ enum LegacyDataMigration {
         var stmt: OpaquePointer?
         guard sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK else { return false }
         defer { sqlite3_finalize(stmt) }
-        sqlite3_bind_text(stmt, 1, table, -1, SQLITE_TRANSIENT)
+        sqlite3_bind_text(stmt, 1, table, -1, unsafeBitCast(-1, to: sqlite3_destructor_type.self))
         return sqlite3_step(stmt) == SQLITE_ROW
     }
 
