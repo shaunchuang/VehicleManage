@@ -5,7 +5,7 @@ import WidgetKit
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
     @Query private var vehicles: [Vehicle]
-    @AppStorage("lastFetchDate", store: UserDefaults(suiteName: "group.ShaunChuang.VehicleManage")) private var lastFetchDate: Double = 0
+    @AppStorage("lastFetchDate", store: UserDefaults(suiteName: AppConfiguration.appGroupIdentifier)) private var lastFetchDate: Double = 0
 
     private var sortedVehicles: [Vehicle] {
         vehicles.sorted { v1, v2 in
@@ -274,10 +274,7 @@ struct ContentView: View {
         let productNames = ["無鉛汽油98", "無鉛汽油95", "無鉛汽油92", "超級/高級柴油"]
         let currentDate = Date()
 
-        fuelPrices = [:]
-        futureFuelPrices = [:]
-        futureFuelDifferences = [:]
-        currentEffectiveDate = nil
+        clearFuelPriceState()
 
         do {
             for productName in productNames {
@@ -320,6 +317,13 @@ struct ContentView: View {
         } catch {
             print("獲取油價資料失敗: \(error)")
         }
+    }
+
+    private func clearFuelPriceState() {
+        fuelPrices = [:]
+        futureFuelPrices = [:]
+        futureFuelDifferences = [:]
+        currentEffectiveDate = nil
     }
 
     @MainActor
