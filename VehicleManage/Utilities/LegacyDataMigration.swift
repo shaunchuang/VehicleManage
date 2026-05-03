@@ -29,6 +29,9 @@ import Foundation
 import SwiftData
 import SQLite3
 
+// SQLITE_TRANSIENT is a C macro not importable in Swift; define the equivalent.
+private let sqliteTransient = unsafeBitCast(-1, to: sqlite3_destructor_type.self)
+
 enum LegacyDataMigration {
 
     enum MigrationOutcome: Equatable {
@@ -120,7 +123,7 @@ enum LegacyDataMigration {
         var stmt: OpaquePointer?
         guard sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK else { return false }
         defer { sqlite3_finalize(stmt) }
-        sqlite3_bind_text(stmt, 1, table, -1, unsafeBitCast(-1, to: sqlite3_destructor_type.self))
+        sqlite3_bind_text(stmt, 1, table, -1, sqliteTransient)
         return sqlite3_step(stmt) == SQLITE_ROW
     }
 
