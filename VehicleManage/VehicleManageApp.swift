@@ -63,7 +63,7 @@ struct VehicleManageApp: App {
             // stores cannot be opened. If the user is upgrading from the
             // pre-CloudKit build, keep opening the original App Group store so
             // their existing local data stays visible until sync is available.
-            print("主要資料容器建立失敗，嘗試使用備援儲存：\(error)")
+            print("主要資料容器建立失敗，嘗試使用備用儲存：\(error)")
             let legacyStoreURL = groupURL.appendingPathComponent(legacyStoreFileName)
             if FileManager.default.fileExists(atPath: legacyStoreURL.path) {
                 do {
