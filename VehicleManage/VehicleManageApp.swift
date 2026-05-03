@@ -18,6 +18,7 @@ struct VehicleManageApp: App {
 
     private static func makeContainer() throws -> ModelContainer {
         let fullSchema = Schema([Vehicle.self, FuelRecord.self, CPCFuelPriceModel.self])
+        let legacyStoreFileName = "vehiclemanage.sqlite"
 
         guard let groupURL = FileManager.default.containerURL(
             forSecurityApplicationGroupIdentifier: "group.ShaunChuang.VehicleManage"
@@ -58,22 +59,38 @@ struct VehicleManageApp: App {
             return container
         } catch {
             // CloudKit container creation failed (e.g. entitlements not yet
-            // provisioned in the developer portal).  Fall back to a purely
-            // local container so the app remains functional.
+            // provisioned in the developer portal). If the user is upgrading
+            // from the pre-CloudKit build, keep opening the original App Group
+            // store so their existing local data stays visible until sync is
+            // available.
             print("CloudKit 容器建立失敗，改用本機儲存：\(error)")
-            let fallbackSyncedConfig = ModelConfiguration(
-                "synced",
-                schema: Schema([Vehicle.self, FuelRecord.self]),
-                cloudKitDatabase: .none
-            )
-            let container = try ModelContainer(
-                for: fullSchema,
-                configurations: fallbackSyncedConfig, localConfig
-            )
-            // Do NOT run migration here: marking it done against the local-only
-            // store would prevent it from running later when CloudKit is
-            // properly provisioned, stranding the user's pre-upgrade data.
-            return container
+            let legacyStoreURL = groupURL.appendingPathComponent(legacyStoreFileName)
+            if FileManager.default.fileExists(atPath: legacyStoreURL.path) {
+                let legacyFallbackConfig = ModelConfiguration(
+                    schema: fullSchema,
+                    url: legacyStoreURL,
+                    cloudKitDatabase: .none
+                )
+                return try ModelContainer(
+                    for: fullSchema,
+                    configurations: legacyFallbackConfig
+                )
+            } else {
+                let fallbackSyncedConfig = ModelConfiguration(
+                    "synced",
+                    schema: Schema([Vehicle.self, FuelRecord.self]),
+                    cloudKitDatabase: .none
+                )
+                let container = try ModelContainer(
+                    for: fullSchema,
+                    configurations: fallbackSyncedConfig, localConfig
+                )
+                // Do NOT run migration here: marking it done against the
+                // local-only store would prevent it from running later when
+                // CloudKit is properly provisioned, stranding the user's
+                // pre-upgrade data.
+                return container
+            }
         }
     }
 
