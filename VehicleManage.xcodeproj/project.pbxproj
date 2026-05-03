@@ -283,9 +283,24 @@
 				TargetAttributes = {
 					F473DF222D70CFF7007F0716 = {
 						CreatedOnToolsVersion = 16.2;
+						ProvisioningStyle = Automatic;
+						SystemCapabilities = {
+							com.apple.ApplicationGroups = {
+								enabled = 1;
+							};
+						};
 					};
 					F4F76ED82D60E45A002B7314 = {
 						CreatedOnToolsVersion = 16.2;
+						ProvisioningStyle = Automatic;
+						SystemCapabilities = {
+							com.apple.ApplicationGroups = {
+								enabled = 1;
+							};
+							com.apple.iCloud = {
+								enabled = 1;
+							};
+						};
 					};
 					F4F76EEA2D60E45C002B7314 = {
 						CreatedOnToolsVersion = 16.2;
