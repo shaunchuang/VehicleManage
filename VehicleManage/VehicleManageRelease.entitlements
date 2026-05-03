@@ -16,13 +16,5 @@
 	<array>
 		<string>group.ShaunChuang.VehicleManage</string>
 	</array>
-	<key>com.apple.developer.icloud-container-identifiers</key>
-	<array>
-		<string>iCloud.ShaunChuang.VehicleManage</string>
-	</array>
-	<key>com.apple.developer.icloud-services</key>
-	<array>
-		<string>CloudKit</string>
-	</array>
 </dict>
 </plist>
