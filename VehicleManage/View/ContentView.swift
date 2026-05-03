@@ -5,6 +5,7 @@ import WidgetKit
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
     @Query private var vehicles: [Vehicle]
+    @AppStorage("lastFetchDate", store: UserDefaults(suiteName: "group.ShaunChuang.VehicleManage")) private var lastFetchDate: Double = 0
 
     private var sortedVehicles: [Vehicle] {
         vehicles.sorted { v1, v2 in
@@ -24,6 +25,7 @@ struct ContentView: View {
     @State private var isShowingAddFuel = false
     @State private var isShowingDetail = false
     @State private var selectedVehicle: Vehicle?
+    @State private var isFetchingFuelPrices = false
 
     private let fuelTypeMapping: [String: FuelType] = [
         "無鉛汽油98": .gas98,
@@ -92,13 +94,38 @@ struct ContentView: View {
                             .padding(.horizontal)
                             .padding(.top, 4)
                         } else {
-                            Text("無油價資料可顯示")
-                                .foregroundStyle(.secondary)
-                                .frame(maxWidth: .infinity)
-                                .padding()
-                                .background(Color.gray.opacity(0.1))
-                                .cornerRadius(8)
-                                .padding(.horizontal)
+                            VStack(spacing: 12) {
+                                Text("無油價資料可顯示")
+                                    .foregroundStyle(.secondary)
+
+                                Button {
+                                    Task {
+                                        await refreshFuelPricesFromAPI()
+                                    }
+                                } label: {
+                                    HStack(spacing: 6) {
+                                        if isFetchingFuelPrices {
+                                            ProgressView()
+                                                .controlSize(.small)
+                                        } else {
+                                            Image(systemName: "arrow.clockwise")
+                                        }
+                                        Text(isFetchingFuelPrices ? "取得中..." : "取得油價")
+                                    }
+                                    .font(.subheadline.weight(.semibold))
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 10)
+                                    .background(Color.blue.gradient)
+                                    .foregroundStyle(.white)
+                                    .cornerRadius(10)
+                                }
+                                .disabled(isFetchingFuelPrices)
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(Color.gray.opacity(0.1))
+                            .cornerRadius(8)
+                            .padding(.horizontal)
                         }
                     }
                     .padding(.top)
@@ -247,6 +274,11 @@ struct ContentView: View {
         let productNames = ["無鉛汽油98", "無鉛汽油95", "無鉛汽油92", "超級/高級柴油"]
         let currentDate = Date()
 
+        fuelPrices = [:]
+        futureFuelPrices = [:]
+        futureFuelDifferences = [:]
+        currentEffectiveDate = nil
+
         do {
             for productName in productNames {
                 let descriptor = FetchDescriptor<CPCFuelPriceModel>(
@@ -288,6 +320,18 @@ struct ContentView: View {
         } catch {
             print("獲取油價資料失敗: \(error)")
         }
+    }
+
+    @MainActor
+    private func refreshFuelPricesFromAPI() async {
+        guard !isFetchingFuelPrices else { return }
+
+        isFetchingFuelPrices = true
+        defer { isFetchingFuelPrices = false }
+
+        await FuelPriceManager(context: modelContext).fetchDataFromCPCAPI()
+        lastFetchDate = Date().timeIntervalSince1970
+        await fetchFuelPricesAndDifferences()
     }
 
     private func diffText(diff: Double) -> String {
