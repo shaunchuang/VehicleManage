@@ -270,11 +270,14 @@ struct ContentView: View {
             .eraseToAnyView()
     }
 
+    @MainActor
     private func fetchFuelPricesAndDifferences() async {
         let productNames = ["無鉛汽油98", "無鉛汽油95", "無鉛汽油92", "超級/高級柴油"]
         let currentDate = Date()
-
-        clearFuelPriceState()
+        var updatedFuelPrices: [String: String] = [:]
+        var updatedFutureFuelPrices: [String: (price: Double, date: Date)] = [:]
+        var updatedFutureFuelDifferences: [String: Double] = [:]
+        var updatedCurrentEffectiveDate: Date?
 
         do {
             for productName in productNames {
@@ -290,40 +293,39 @@ struct ContentView: View {
                 if let currentPrice = allPrices.first(where: {
                     $0.effectiveDate <= currentDate
                 }) {
-                    fuelPrices[productName] = String(
+                    updatedFuelPrices[productName] = String(
                         format: "%.2f", currentPrice.price)
-                    if currentEffectiveDate == nil {
-                        currentEffectiveDate = currentPrice.effectiveDate
+                    if updatedCurrentEffectiveDate == nil {
+                        updatedCurrentEffectiveDate = currentPrice.effectiveDate
                     }
 
                     if let futurePrice = allPrices.first(where: {
                         $0.effectiveDate > currentDate
                     }) {
                         let difference = futurePrice.price - currentPrice.price
-                        futureFuelDifferences[productName] = difference
-                        futureFuelPrices[productName] = (
+                        updatedFutureFuelDifferences[productName] = difference
+                        updatedFutureFuelPrices[productName] = (
                             price: futurePrice.price,
                             date: futurePrice.effectiveDate
                         )
                     } else {
-                        futureFuelDifferences[productName] = 0
-                        futureFuelPrices[productName] = nil
+                        updatedFutureFuelDifferences[productName] = 0
+                        updatedFutureFuelPrices[productName] = nil
                     }
                 }
             }
+
+            fuelPrices = updatedFuelPrices
+            futureFuelPrices = updatedFutureFuelPrices
+            futureFuelDifferences = updatedFutureFuelDifferences
+            currentEffectiveDate = updatedCurrentEffectiveDate
+
             // 更新 widget 快取（包含車輛統計與油價資料）
             WidgetCacheUpdater.update(from: modelContext)
             WidgetCenter.shared.reloadAllTimelines()
         } catch {
             print("獲取油價資料失敗: \(error)")
         }
-    }
-
-    private func clearFuelPriceState() {
-        fuelPrices = [:]
-        futureFuelPrices = [:]
-        futureFuelDifferences = [:]
-        currentEffectiveDate = nil
     }
 
     @MainActor
