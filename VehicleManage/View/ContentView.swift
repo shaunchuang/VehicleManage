@@ -333,9 +333,25 @@ struct ContentView: View {
         isFetchingFuelPrices = true
         defer { isFetchingFuelPrices = false }
 
+        let previousEffectiveDate = currentEffectiveDate
+        let previousFuelPrices = fuelPrices
+        let previousFutureFuelPrices = futureFuelPrices
+        let previousFutureFuelDifferences = futureFuelDifferences
+
         await FuelPriceManager(context: modelContext).fetchDataFromCPCAPI()
-        lastFetchDate = Date().timeIntervalSince1970
         await fetchFuelPricesAndDifferences()
+
+        let didPersistNewFuelPriceData =
+            currentEffectiveDate != previousEffectiveDate ||
+            fuelPrices != previousFuelPrices ||
+            futureFuelPrices != previousFutureFuelPrices ||
+            futureFuelDifferences != previousFutureFuelDifferences
+
+        if didPersistNewFuelPriceData {
+            lastFetchDate = Date().timeIntervalSince1970
+        } else {
+            print("CPC 油價資料未更新，略過 lastFetchDate 寫入")
+        }
     }
 
     private func diffText(diff: Double) -> String {
