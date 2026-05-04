@@ -339,8 +339,13 @@ struct ContentView: View {
         let previousFuelPrices = fuelPrices
         let previousFutureFuelPrices = futureFuelPrices
         let previousFutureFuelDifferences = futureFuelDifferences
+        let container = modelContext.container
 
-        await FuelPriceManager(context: modelContext).fetchDataFromCPCAPI()
+        await Task.detached(priority: .userInitiated) {
+            let backgroundContext = ModelContext(container)
+            await FuelPriceManager(context: backgroundContext).fetchDataFromCPCAPI()
+        }.value
+
         await fetchFuelPricesAndDifferences()
 
         let didPersistNewFuelPriceData =
