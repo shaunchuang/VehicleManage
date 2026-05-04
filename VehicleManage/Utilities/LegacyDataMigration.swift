@@ -43,7 +43,7 @@ enum LegacyDataMigration {
 
     static let migrationKey = "cloudKitMigrationCompleted_v1"
     static let lastMigrationErrorKey = "cloudKitMigrationLastError_v1"
-    static let suiteName = "group.ShaunChuang.VehicleManage"
+    static let suiteName = AppConfiguration.appGroupIdentifier
 
     private static var migrationDefaults: UserDefaults? {
         UserDefaults(suiteName: suiteName)

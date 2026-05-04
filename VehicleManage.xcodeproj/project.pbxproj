@@ -74,6 +74,7 @@
 				Model/FuelRecord.swift,
 				Model/FuelType.swift,
 				Model/Vehicle.swift,
+				Utilities/AppConfiguration.swift,
 				Utilities/FuelCalculator.swift,
 				Utilities/WidgetDataCache.swift,
 			);
