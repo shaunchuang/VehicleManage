@@ -18,6 +18,7 @@ struct VehicleManageApp: App {
 
     private static func makeContainer() throws -> ModelContainer {
         let fullSchema = Schema([Vehicle.self, FuelRecord.self, CPCFuelPriceModel.self])
+        let legacyStoreFileName = "vehiclemanage.sqlite"
 
         guard let groupURL = FileManager.default.containerURL(
             forSecurityApplicationGroupIdentifier: AppConfiguration.appGroupIdentifier
@@ -57,10 +58,34 @@ struct VehicleManageApp: App {
             scheduleLegacyMigration(container: container, groupURL: groupURL)
             return container
         } catch {
-            // CloudKit container creation failed (e.g. entitlements not yet
-            // provisioned in the developer portal).  Fall back to a purely
-            // local container so the app remains functional.
-            print("CloudKit 容器建立失敗，改用本機儲存：\(error)")
+            // The primary container setup can fail because CloudKit-backed
+            // storage is unavailable or because one of the configured local
+            // stores cannot be opened. Only reopen the original App Group
+            // store before the one-time legacy migration has completed;
+            // afterwards the retained SQLite file is backup-only and may be
+            // stale.
+            print("主要資料容器建立失敗，嘗試使用備用儲存：\(error)")
+            let legacyStoreURL = groupURL.appendingPathComponent(legacyStoreFileName)
+            let shouldUseLegacyFallback =
+                !LegacyDataMigration.isMigrationDone &&
+                FileManager.default.fileExists(atPath: legacyStoreURL.path)
+
+            if shouldUseLegacyFallback {
+                do {
+                    let legacyFallbackConfig = ModelConfiguration(
+                        schema: fullSchema,
+                        url: legacyStoreURL,
+                        cloudKitDatabase: .none
+                    )
+                    return try ModelContainer(
+                        for: fullSchema,
+                        configurations: legacyFallbackConfig
+                    )
+                } catch {
+                    print("舊版資料庫開啟失敗，改用新的本機儲存：\(error)")
+                }
+            }
+
             let fallbackSyncedConfig = ModelConfiguration(
                 "synced",
                 schema: Schema([Vehicle.self, FuelRecord.self]),
@@ -70,9 +95,10 @@ struct VehicleManageApp: App {
                 for: fullSchema,
                 configurations: fallbackSyncedConfig, localConfig
             )
-            // Do NOT run migration here: marking it done against the local-only
-            // store would prevent it from running later when CloudKit is
-            // properly provisioned, stranding the user's pre-upgrade data.
+            // Do NOT run migration here: marking it done against the
+            // local-only store would prevent it from running later when
+            // CloudKit is properly provisioned, stranding the user's
+            // pre-upgrade data.
             return container
         }
     }

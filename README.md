@@ -98,6 +98,8 @@ When a user upgrades from a version that stored all models in a single `vehiclem
 
 If the old SQLite is absent or the migration cannot read the expected table structure, the migration is silently skipped and the app continues with an empty synced store.
 
+If CloudKit container setup is temporarily unavailable **before migration has completed**, the app may fall back to opening the legacy App Group store directly when `vehiclemanage.sqlite` exists, so pre-upgrade local data remains visible until CloudKit is available again. After `cloudKitMigrationCompleted_v1` has been set, the retained `vehiclemanage.sqlite` file is backup-only and should not be reopened for unrelated CloudKit setup failures, because doing so could surface stale pre-migration data.
+
 ## Versioning
 
 Current project settings:
