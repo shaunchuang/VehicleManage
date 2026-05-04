@@ -5,6 +5,7 @@ import WidgetKit
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
     @Query private var vehicles: [Vehicle]
+    @AppStorage("lastFetchDate", store: UserDefaults(suiteName: AppConfiguration.appGroupIdentifier)) private var lastFetchDate: Double = 0
 
     private var sortedVehicles: [Vehicle] {
         vehicles.sorted { v1, v2 in
@@ -24,6 +25,7 @@ struct ContentView: View {
     @State private var isShowingAddFuel = false
     @State private var isShowingDetail = false
     @State private var selectedVehicle: Vehicle?
+    @State private var isFetchingFuelPrices = false
 
     private let fuelTypeMapping: [String: FuelType] = [
         "無鉛汽油98": .gas98,
@@ -92,13 +94,38 @@ struct ContentView: View {
                             .padding(.horizontal)
                             .padding(.top, 4)
                         } else {
-                            Text("無油價資料可顯示")
-                                .foregroundStyle(.secondary)
-                                .frame(maxWidth: .infinity)
-                                .padding()
-                                .background(Color.gray.opacity(0.1))
-                                .cornerRadius(8)
-                                .padding(.horizontal)
+                            VStack(spacing: 12) {
+                                Text("無油價資料可顯示")
+                                    .foregroundStyle(.secondary)
+
+                                Button {
+                                    Task {
+                                        await refreshFuelPricesFromAPI()
+                                    }
+                                } label: {
+                                    HStack(spacing: 6) {
+                                        if isFetchingFuelPrices {
+                                            ProgressView()
+                                                .controlSize(.small)
+                                        } else {
+                                            Image(systemName: "arrow.clockwise")
+                                        }
+                                        Text(isFetchingFuelPrices ? "取得中..." : "取得油價")
+                                    }
+                                    .font(.subheadline.weight(.semibold))
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 10)
+                                    .background(Color.blue.gradient)
+                                    .foregroundStyle(.white)
+                                    .cornerRadius(10)
+                                }
+                                .disabled(isFetchingFuelPrices)
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(Color.gray.opacity(0.1))
+                            .cornerRadius(8)
+                            .padding(.horizontal)
                         }
                     }
                     .padding(.top)
@@ -243,9 +270,14 @@ struct ContentView: View {
             .eraseToAnyView()
     }
 
+    @MainActor
     private func fetchFuelPricesAndDifferences() async {
         let productNames = ["無鉛汽油98", "無鉛汽油95", "無鉛汽油92", "超級/高級柴油"]
         let currentDate = Date()
+        var updatedFuelPrices: [String: String] = [:]
+        var updatedFutureFuelPrices: [String: (price: Double, date: Date)] = [:]
+        var updatedFutureFuelDifferences: [String: Double] = [:]
+        var updatedCurrentEffectiveDate: Date?
 
         do {
             for productName in productNames {
@@ -261,32 +293,71 @@ struct ContentView: View {
                 if let currentPrice = allPrices.first(where: {
                     $0.effectiveDate <= currentDate
                 }) {
-                    fuelPrices[productName] = String(
+                    updatedFuelPrices[productName] = String(
                         format: "%.2f", currentPrice.price)
-                    if currentEffectiveDate == nil {
-                        currentEffectiveDate = currentPrice.effectiveDate
+                    if updatedCurrentEffectiveDate == nil {
+                        updatedCurrentEffectiveDate = currentPrice.effectiveDate
                     }
 
                     if let futurePrice = allPrices.first(where: {
                         $0.effectiveDate > currentDate
                     }) {
                         let difference = futurePrice.price - currentPrice.price
-                        futureFuelDifferences[productName] = difference
-                        futureFuelPrices[productName] = (
+                        updatedFutureFuelDifferences[productName] = difference
+                        updatedFutureFuelPrices[productName] = (
                             price: futurePrice.price,
                             date: futurePrice.effectiveDate
                         )
                     } else {
-                        futureFuelDifferences[productName] = 0
-                        futureFuelPrices[productName] = nil
+                        updatedFutureFuelDifferences[productName] = 0
+                        updatedFutureFuelPrices[productName] = nil
                     }
                 }
             }
+
+            fuelPrices = updatedFuelPrices
+            futureFuelPrices = updatedFutureFuelPrices
+            futureFuelDifferences = updatedFutureFuelDifferences
+            currentEffectiveDate = updatedCurrentEffectiveDate
+
             // 更新 widget 快取（包含車輛統計與油價資料）
             WidgetCacheUpdater.update(from: modelContext)
             WidgetCenter.shared.reloadAllTimelines()
         } catch {
             print("獲取油價資料失敗: \(error)")
+        }
+    }
+
+    @MainActor
+    private func refreshFuelPricesFromAPI() async {
+        guard !isFetchingFuelPrices else { return }
+
+        isFetchingFuelPrices = true
+        defer { isFetchingFuelPrices = false }
+
+        let previousEffectiveDate = currentEffectiveDate
+        let previousFuelPrices = fuelPrices
+        let previousFutureFuelPrices = futureFuelPrices
+        let previousFutureFuelDifferences = futureFuelDifferences
+        let container = modelContext.container
+
+        await Task.detached(priority: .userInitiated) {
+            let backgroundContext = ModelContext(container)
+            await FuelPriceManager(context: backgroundContext).fetchDataFromCPCAPI()
+        }.value
+
+        await fetchFuelPricesAndDifferences()
+
+        let didPersistNewFuelPriceData =
+            currentEffectiveDate != previousEffectiveDate ||
+            fuelPrices != previousFuelPrices ||
+            futureFuelPrices != previousFutureFuelPrices ||
+            futureFuelDifferences != previousFutureFuelDifferences
+
+        if didPersistNewFuelPriceData {
+            lastFetchDate = Date().timeIntervalSince1970
+        } else {
+            print("CPC 油價資料未更新，略過 lastFetchDate 寫入")
         }
     }
 

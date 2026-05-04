@@ -4,7 +4,7 @@ import SwiftUI
 @main
 struct VehicleManageApp: App {
     let modelContainer: ModelContainer
-    @AppStorage("lastFetchDate", store: UserDefaults(suiteName: "group.ShaunChuang.VehicleManage")) private var lastFetchDate: Double = 0
+    @AppStorage("lastFetchDate", store: UserDefaults(suiteName: AppConfiguration.appGroupIdentifier)) private var lastFetchDate: Double = 0
 
     init() {
         do {
@@ -20,7 +20,7 @@ struct VehicleManageApp: App {
         let fullSchema = Schema([Vehicle.self, FuelRecord.self, CPCFuelPriceModel.self])
 
         guard let groupURL = FileManager.default.containerURL(
-            forSecurityApplicationGroupIdentifier: "group.ShaunChuang.VehicleManage"
+            forSecurityApplicationGroupIdentifier: AppConfiguration.appGroupIdentifier
         ) else {
             // Fallback: no App Group access – use in-memory defaults (should not
             // happen on a properly provisioned device).

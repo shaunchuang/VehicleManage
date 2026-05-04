@@ -37,7 +37,7 @@ struct WidgetCache: Codable {
 
 enum WidgetDataCache {
     static let userDefaultsKey = "widgetCache"
-    static let suiteName = "group.ShaunChuang.VehicleManage"
+    static let suiteName = AppConfiguration.appGroupIdentifier
 
     /// Returns the current cached snapshot, or nil if none exists yet.
     static func load() -> WidgetCache? {
