@@ -348,10 +348,16 @@ struct ContentView: View {
 
         await fetchFuelPricesAndDifferences()
 
+        let futureFuelPricesChanged =
+            futureFuelPrices.count != previousFutureFuelPrices.count ||
+            futureFuelPrices.contains(where: { key, new in
+                guard let old = previousFutureFuelPrices[key] else { return true }
+                return new.price != old.price || new.date != old.date
+            })
         let didPersistNewFuelPriceData =
             currentEffectiveDate != previousEffectiveDate ||
             fuelPrices != previousFuelPrices ||
-            futureFuelPrices != previousFutureFuelPrices ||
+            futureFuelPricesChanged ||
             futureFuelDifferences != previousFutureFuelDifferences
 
         if didPersistNewFuelPriceData {
