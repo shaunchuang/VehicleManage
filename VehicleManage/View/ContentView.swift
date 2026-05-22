@@ -3,6 +3,7 @@ import SwiftUI
 import WidgetKit
 
 struct ContentView: View {
+    let isCloudKitEnabled: Bool
     @Environment(\.modelContext) private var modelContext
     @Query private var vehicles: [Vehicle]
     @AppStorage("lastFetchDate", store: UserDefaults(suiteName: AppConfiguration.appGroupIdentifier)) private var lastFetchDate: Double = 0
@@ -38,6 +39,24 @@ struct ContentView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 24) {
+                    // 本機儲存警示（CloudKit 無法啟用時顯示）
+                    if !isCloudKitEnabled {
+                        HStack(spacing: 8) {
+                            Image(systemName: "icloud.slash")
+                                .foregroundStyle(.orange)
+                            Text("目前為本機儲存模式，資料不會同步至 iCloud")
+                                .font(.footnote)
+                                .foregroundStyle(.orange)
+                            Spacer()
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 10)
+                        .background(Color.orange.opacity(0.12))
+                        .cornerRadius(10)
+                        .padding(.horizontal)
+                        .padding(.top)
+                    }
+
                     // 即時油價區塊
                     VStack(alignment: .leading, spacing: 12) {
                         HStack {

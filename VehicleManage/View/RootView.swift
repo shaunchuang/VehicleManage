@@ -5,6 +5,7 @@ import WidgetKit
 struct RootView: View {
     let modelContainer: ModelContainer
     @Binding var lastFetchDate: Double // 綁定 AppStorage 的 lastFetchDate
+    let isCloudKitEnabled: Bool
     @State private var isLoading = true // 控制是否顯示載入畫面
     @Environment(\.scenePhase) private var scenePhase // 監聽場景階段
 
@@ -14,7 +15,7 @@ struct RootView: View {
                 LoadingView()
                     .transition(.opacity)
             } else {
-                ContentView()
+                ContentView(isCloudKitEnabled: isCloudKitEnabled)
                     .modelContainer(modelContainer)
                     .transition(.opacity)
             }
